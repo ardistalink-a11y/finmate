@@ -1,0 +1,413 @@
+import { create } from 'zustand';
+import { Transaction, Account, Budget, Goal, ChatMessage, Debt, Installment } from '@/types';
+import * as storage from '@/lib/storage';
+import { v4 as uuidv4 } from 'uuid';
+import { Language } from '@/lib/i18n';
+
+const createDefaultCashAccount = (userId?: string): Account => ({
+  id: uuidv4(),
+  user_id: userId || 'local',
+  name: 'Cash',
+  type: 'cash',
+  balance: 0,
+  currency: 'IDR',
+  icon: 'cash',
+  color: '#71717a',
+  created_at: new Date().toISOString(),
+});
+
+interface AppState {
+  // Auth
+  userId: string | null;
+  userEmail: string | null;
+  userName: string | null;
+  userAvatar: string | null;
+  setUser: (id: string | null, email?: string, name?: string, avatar?: string) => void;
+
+  // Theme & Language
+  theme: 'light' | 'dark';
+  language: Language;
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+  setLanguage: (lang: Language) => void;
+
+  // Navigation
+  currentPage: string;
+  setCurrentPage: (page: string) => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  chatOpen: boolean;
+  setChatOpen: (open: boolean) => void;
+
+  // Data
+  transactions: Transaction[];
+  accounts: Account[];
+  budgets: Budget[];
+  goals: Goal[];
+  debts: Debt[];
+  installments: Installment[];
+  chatMessages: ChatMessage[];
+  isLoading: boolean;
+
+  // Data actions
+  loadData: () => Promise<void>;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateTransaction: (tx: Transaction) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  addAccount: (account: Omit<Account, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateAccount: (account: Account) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
+  addBudget: (budget: Omit<Budget, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateBudget: (budget: Budget) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
+  addGoal: (goal: Omit<Goal, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateGoal: (goal: Goal) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  addDebt: (debt: Omit<Debt, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateDebt: (debt: Debt) => Promise<void>;
+  deleteDebt: (id: string) => Promise<void>;
+  addInstallment: (inst: Omit<Installment, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  updateInstallment: (inst: Installment) => Promise<void>;
+  deleteInstallment: (id: string) => Promise<void>;
+  payInstallment: (id: string) => Promise<void>;
+
+  // Chat
+  addChatMessage: (msg: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
+  clearChat: () => void;
+}
+
+export const useStore = create<AppState>((set, get) => ({
+  // Auth
+  userId: null,
+  userEmail: null,
+  userName: null,
+  userAvatar: null,
+  setUser: (id, email, name, avatar) => set({ userId: id, userEmail: email || null, userName: name || null, userAvatar: avatar || null }),
+
+  // Theme & Language
+  theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+  language: (localStorage.getItem('language') as Language) || 'id',
+  toggleTheme: () => {
+    const newTheme = get().theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', newTheme);
+    set({ theme: newTheme });
+  },
+  setTheme: (theme) => {
+    localStorage.setItem('theme', theme);
+    set({ theme });
+  },
+  setLanguage: (lang) => {
+    localStorage.setItem('language', lang);
+    set({ language: lang });
+  },
+
+  // Navigation
+  currentPage: 'dashboard',
+  setCurrentPage: (page) => set({ currentPage: page }),
+  sidebarOpen: false,
+  setSidebarOpen: (open) => set({ sidebarOpen: open }),
+  chatOpen: false,
+  setChatOpen: (open) => set({ chatOpen: open }),
+
+  // Data
+  transactions: [],
+  accounts: [],
+  budgets: [],
+  goals: [],
+  debts: [],
+  installments: [],
+  chatMessages: storage.getChatMessages(),
+  isLoading: false,
+
+  loadData: async () => {
+    set({ isLoading: true });
+    const uid = get().userId || undefined;
+    const [transactions, rawAccounts, budgets, goals, debts, installments] = await Promise.all([
+      storage.getTransactions(uid),
+      storage.getAccounts(uid),
+      storage.getBudgets(uid),
+      storage.getGoals(uid),
+      storage.getDebts(uid),
+      storage.getInstallments(uid),
+    ]);
+    let accounts = rawAccounts;
+    const hasCashAccount = accounts.some(a => a.type === 'cash');
+    if (!hasCashAccount) {
+      const cashAccount = createDefaultCashAccount(uid);
+      const savedCash = await storage.addAccount(cashAccount, uid);
+      accounts = [savedCash, ...accounts];
+    }
+    set({ transactions, accounts, budgets, goals, debts, installments, isLoading: false });
+  },
+
+  addTransaction: async (txData) => {
+    const uid = get().userId || undefined;
+    let accountId = txData.account_id;
+    if (!accountId) {
+      let cashAccount = get().accounts.find(a => a.type === 'cash');
+      if (!cashAccount) {
+        cashAccount = await storage.addAccount(createDefaultCashAccount(uid), uid);
+        set(s => ({ accounts: [cashAccount!, ...s.accounts] }));
+      }
+      accountId = cashAccount.id;
+    }
+    const tx: Transaction = {
+      ...txData,
+      account_id: accountId,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addTransaction(tx, uid);
+    set(s => ({ transactions: [saved, ...s.transactions] }));
+
+    // Update account balance
+    const accounts = get().accounts;
+    if (tx.account_id) {
+      const account = accounts.find(a => a.id === tx.account_id);
+      if (account) {
+        const delta = tx.type === 'income' ? tx.amount : -tx.amount;
+        const updated = { ...account, balance: account.balance + delta };
+        await storage.updateAccount(updated, uid);
+        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+      }
+    }
+
+    // Update budget spent
+    if (tx.type === 'expense') {
+      const budgets = get().budgets;
+      const budget = budgets.find(b => b.category === tx.category);
+      if (budget) {
+        const updated = { ...budget, spent: budget.spent + tx.amount };
+        await storage.updateBudget(updated, uid);
+        set(s => ({ budgets: s.budgets.map(b => b.id === updated.id ? updated : b) }));
+      }
+    }
+  },
+
+  updateTransaction: async (tx) => {
+    const uid = get().userId || undefined;
+    await storage.updateTransaction(tx, uid);
+    set(s => ({ transactions: s.transactions.map(t => t.id === tx.id ? tx : t) }));
+  },
+
+  deleteTransaction: async (id) => {
+    const uid = get().userId || undefined;
+    const tx = get().transactions.find(t => t.id === id);
+    await storage.deleteTransaction(id, uid);
+    set(s => ({ transactions: s.transactions.filter(t => t.id !== id) }));
+
+    // Revert account balance
+    if (tx && tx.account_id) {
+      const account = get().accounts.find(a => a.id === tx.account_id);
+      if (account) {
+        const delta = tx.type === 'income' ? -tx.amount : tx.amount;
+        const updated = { ...account, balance: account.balance + delta };
+        await storage.updateAccount(updated, uid);
+        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+      }
+    }
+  },
+
+  addAccount: async (accountData) => {
+    const uid = get().userId || undefined;
+    const account: Account = {
+      ...accountData,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addAccount(account, uid);
+    set(s => ({ accounts: [...s.accounts, saved] }));
+  },
+
+  updateAccount: async (account) => {
+    const uid = get().userId || undefined;
+    await storage.updateAccount(account, uid);
+    set(s => ({ accounts: s.accounts.map(a => a.id === account.id ? account : a) }));
+  },
+
+  deleteAccount: async (id) => {
+    const account = get().accounts.find(a => a.id === id);
+    const cashAccounts = get().accounts.filter(a => a.type === 'cash');
+    if (account?.type === 'cash' && cashAccounts.length <= 1) return;
+    const uid = get().userId || undefined;
+    await storage.deleteAccount(id, uid);
+    set(s => ({ accounts: s.accounts.filter(a => a.id !== id) }));
+  },
+
+  addBudget: async (budgetData) => {
+    const uid = get().userId || undefined;
+    const budget: Budget = {
+      ...budgetData,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addBudget(budget, uid);
+    set(s => ({ budgets: [...s.budgets, saved] }));
+  },
+
+  updateBudget: async (budget) => {
+    const uid = get().userId || undefined;
+    await storage.updateBudget(budget, uid);
+    set(s => ({ budgets: s.budgets.map(b => b.id === budget.id ? budget : b) }));
+  },
+
+  deleteBudget: async (id) => {
+    const uid = get().userId || undefined;
+    await storage.deleteBudget(id, uid);
+    set(s => ({ budgets: s.budgets.filter(b => b.id !== id) }));
+  },
+
+  addGoal: async (goalData) => {
+    const uid = get().userId || undefined;
+    const goal: Goal = {
+      ...goalData,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addGoal(goal, uid);
+    set(s => ({ goals: [...s.goals, saved] }));
+  },
+
+  updateGoal: async (goal) => {
+    const uid = get().userId || undefined;
+    await storage.updateGoal(goal, uid);
+    set(s => ({ goals: s.goals.map(g => g.id === goal.id ? goal : g) }));
+  },
+
+  deleteGoal: async (id) => {
+    const uid = get().userId || undefined;
+    await storage.deleteGoal(id, uid);
+    set(s => ({ goals: s.goals.filter(g => g.id !== id) }));
+  },
+
+  // Debts - affect balance but NOT income/expense
+  addDebt: async (debtData) => {
+    const uid = get().userId || undefined;
+    const debt: Debt = {
+      ...debtData,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addDebt(debt, uid);
+    set(s => ({ debts: [saved, ...s.debts] }));
+
+    // Update account balance
+    // debt = I owe money, so I received it -> +balance
+    // receivable = someone owes me, so I gave it -> -balance
+    const account = get().accounts.find(a => a.id === debt.account_id);
+    if (account && !debt.is_paid) {
+      const delta = debt.type === 'debt' ? debt.amount : -debt.amount;
+      const updated = { ...account, balance: account.balance + delta };
+      await storage.updateAccount(updated, uid);
+      set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+    }
+  },
+
+  updateDebt: async (debt) => {
+    const uid = get().userId || undefined;
+    const oldDebt = get().debts.find(d => d.id === debt.id);
+    await storage.updateDebt(debt, uid);
+    set(s => ({ debts: s.debts.map(d => d.id === debt.id ? debt : d) }));
+
+    // Handle payment status change
+    if (oldDebt && !oldDebt.is_paid && debt.is_paid) {
+      // Just paid - reverse the balance effect
+      const account = get().accounts.find(a => a.id === debt.account_id);
+      if (account) {
+        const delta = debt.type === 'debt' ? -debt.amount : debt.amount;
+        const updated = { ...account, balance: account.balance + delta };
+        await storage.updateAccount(updated, uid);
+        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+      }
+    }
+  },
+
+  deleteDebt: async (id) => {
+    const uid = get().userId || undefined;
+    const debt = get().debts.find(d => d.id === id);
+    await storage.deleteDebt(id, uid);
+    set(s => ({ debts: s.debts.filter(d => d.id !== id) }));
+
+    // Revert balance if not paid
+    if (debt && !debt.is_paid) {
+      const account = get().accounts.find(a => a.id === debt.account_id);
+      if (account) {
+        const delta = debt.type === 'debt' ? -debt.amount : debt.amount;
+        const updated = { ...account, balance: account.balance + delta };
+        await storage.updateAccount(updated, uid);
+        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+      }
+    }
+  },
+
+  // Installments
+  addInstallment: async (instData) => {
+    const uid = get().userId || undefined;
+    const inst: Installment = {
+      ...instData,
+      id: uuidv4(),
+      user_id: uid || 'local',
+      created_at: new Date().toISOString(),
+    };
+    const saved = await storage.addInstallment(inst, uid);
+    set(s => ({ installments: [saved, ...s.installments] }));
+  },
+
+  updateInstallment: async (inst) => {
+    const uid = get().userId || undefined;
+    await storage.updateInstallment(inst, uid);
+    set(s => ({ installments: s.installments.map(i => i.id === inst.id ? inst : i) }));
+  },
+
+  deleteInstallment: async (id) => {
+    const uid = get().userId || undefined;
+    await storage.deleteInstallment(id, uid);
+    set(s => ({ installments: s.installments.filter(i => i.id !== id) }));
+  },
+
+  payInstallment: async (id) => {
+    const uid = get().userId || undefined;
+    const inst = get().installments.find(i => i.id === id);
+    if (!inst || inst.is_completed) return;
+
+    const newPaidMonths = inst.paid_months + 1;
+    const isCompleted = newPaidMonths >= inst.duration_months;
+    const updated: Installment = { ...inst, paid_months: newPaidMonths, is_completed: isCompleted };
+    await storage.updateInstallment(updated, uid);
+    set(s => ({ installments: s.installments.map(i => i.id === id ? updated : i) }));
+
+    // Create expense transaction for installment payment
+    await get().addTransaction({
+      type: 'expense',
+      category: 'Cicilan',
+      amount: inst.monthly_payment,
+      description: `Cicilan ${inst.name} (${newPaidMonths}/${inst.duration_months})`,
+      date: new Date().toISOString().slice(0, 10),
+      account_id: inst.account_id,
+    });
+  },
+
+  // Chat
+  addChatMessage: (msgData) => {
+    const msg: ChatMessage = {
+      ...msgData,
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+    };
+    set(s => {
+      const messages = [...s.chatMessages, msg];
+      storage.saveChatMessages(messages);
+      return { chatMessages: messages };
+    });
+  },
+
+  clearChat: () => {
+    storage.clearChatMessages();
+    set({ chatMessages: [] });
+  },
+}));
