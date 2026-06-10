@@ -3,8 +3,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 // ─── HARDCODED CONFIG ───────────────────────────────────────
 // Ganti 2 value di bawah ini dengan project Supabase kamu.
 // Setelah di-deploy, semua user langsung pakai Supabase.
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJ...YOUR_ANON_KEY';
+const SUPABASE_URL = 'https://psyqlhqlshadlpxhjsdw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzeXFsaHFsc2hhZGxweGhqc2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjE4MjMsImV4cCI6MjA5NjYzNzgyM30.ixv_-6L9D6_gls_F-lr-XmQmC2iwoMIqFng4OppTKPw';
 // ─────────────────────────────────────────────────────────────
 
 let supabaseInstance: SupabaseClient | null = null;
