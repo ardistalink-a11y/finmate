@@ -20,22 +20,37 @@ const FinMateLogo: React.FC<{ size?: number }> = ({ size = 24 }) => (
   </svg>
 );
 
+type PendingAction = { type: string; data: Record<string, unknown> };
+
 export const ChatPanel: React.FC = () => {
-  const { chatOpen, setChatOpen, chatMessages, addChatMessage, clearChat, transactions, accounts, budgets, addTransaction, language } = useStore();
+  const {
+    chatOpen, setChatOpen, chatMessages, addChatMessage, clearChat,
+    transactions, accounts, budgets, debts, goals, installments,
+    addTransaction, updateTransaction, deleteTransaction, language,
+  } = useStore();
   const t = getTranslation(language);
+
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: string; data: Record<string, unknown> } | null>(null);
+  const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isTyping]);
 
   useEffect(() => {
-    if (chatOpen) inputRef.current?.focus();
+    if (chatOpen) textareaRef.current?.focus();
   }, [chatOpen]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
+  }, [input]);
 
   const handleSend = async () => {
     const trimmed = input.trim();
@@ -47,13 +62,9 @@ export const ChatPanel: React.FC = () => {
 
     try {
       const userMsgs = [...chatMessages, { id: '', role: 'user' as const, content: trimmed, timestamp: '' }];
-      const response = await sendAIMessage(userMsgs, accounts, transactions, budgets);
-
+      const response = await sendAIMessage(userMsgs, accounts, transactions, budgets, debts, goals, installments);
       addChatMessage({ role: 'assistant', content: response.content });
-
-      if (response.action) {
-        setPendingAction(response.action);
-      }
+      if (response.actions?.length) setPendingActions(response.actions);
     } catch {
       addChatMessage({ role: 'assistant', content: t.chat.errorOccurred });
     } finally {
@@ -61,52 +72,97 @@ export const ChatPanel: React.FC = () => {
     }
   };
 
-  const handleConfirmAction = async () => {
-    if (!pendingAction || pendingAction.type !== 'add_transaction') return;
-
-    const data = pendingAction.data;
-    const type = (data.type as string) || 'expense';
-    const category = (data.category as string) || 'Lainnya';
-    const amount = Number(data.amount) || 0;
-    const description = (data.description as string) || '';
-    const date = (data.date as string) || format(new Date(), 'yyyy-MM-dd');
-
-    const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
-    const matchedCat = allCats.find(c => c.name.toLowerCase() === category.toLowerCase());
-    const finalCategory = matchedCat ? matchedCat.name : category;
-
-    const defaultAccount = accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || '';
-
-    await addTransaction({
-      type: type as 'income' | 'expense',
-      category: finalCategory,
-      amount,
-      description,
-      date,
-      account_id: defaultAccount,
-    });
-
-    const typeLabel = type === 'income' 
-      ? (language === 'id' ? 'Pemasukan' : 'Income') 
-      : (language === 'id' ? 'Pengeluaran' : 'Expense');
-
-    addChatMessage({
-      role: 'assistant',
-      content: `${t.chat.transactionSaved}\n\n**${typeLabel}**: ${formatCurrency(amount, language)}\n**${t.common.category}**: ${finalCategory}\n**${t.common.description}**: ${description}\n**${t.common.date}**: ${date}`,
-    });
-
-    setPendingAction(null);
+  const resolveFullId = (shortId: string): string => {
+    const found = transactions.find(t => t.id.startsWith(shortId));
+    return found?.id || shortId;
   };
 
-  const handleRejectAction = () => {
+  const handleConfirmActions = async () => {
+    for (const action of pendingActions) {
+      if (action.type === 'add_transaction') {
+        const data = action.data;
+        const type = (data.type as string) || 'expense';
+        const category = (data.category as string) || 'Lainnya';
+        const amount = Number(data.amount) || 0;
+        const description = (data.description as string) || '';
+        const date = (data.date as string) || format(new Date(), 'yyyy-MM-dd');
+        const allCats = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES];
+        const matched = allCats.find(c => c.name.toLowerCase() === category.toLowerCase());
+        const finalCategory = matched ? matched.name : category;
+        const shortAccountId = (data.account_id as string) || '';
+        const accountId = shortAccountId
+          ? (accounts.find(a => a.id.startsWith(shortAccountId))?.id || accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || '')
+          : (accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || '');
+
+        await addTransaction({
+          type: type as 'income' | 'expense',
+          category: finalCategory,
+          amount,
+          description,
+          date,
+          account_id: accountId,
+        });
+
+        const typeLabel = type === 'income'
+          ? (language === 'id' ? 'Pemasukan' : 'Income')
+          : (language === 'id' ? 'Pengeluaran' : 'Expense');
+        addChatMessage({
+          role: 'assistant',
+          content: `✅ ${t.chat.transactionSaved}\n\n**${typeLabel}**: ${formatCurrency(amount, language)}\n**${t.common.category}**: ${finalCategory}\n**${t.common.description}**: ${description}\n**${t.common.date}**: ${date}`,
+        });
+      }
+
+      if (action.type === 'edit_transaction') {
+        const data = action.data;
+        const fullId = resolveFullId(data.id as string);
+        const existing = transactions.find(t => t.id === fullId);
+        if (existing) {
+          const updated = {
+            ...existing,
+            ...(data.type        && { type: data.type as 'income' | 'expense' }),
+            ...(data.category    && { category: data.category as string }),
+            ...(data.amount      && { amount: Number(data.amount) }),
+            ...(data.description && { description: data.description as string }),
+            ...(data.date        && { date: data.date as string }),
+          };
+          await updateTransaction(updated);
+          addChatMessage({
+            role: 'assistant',
+            content: `✅ Transaksi berhasil diupdate.\n\n**${updated.description}** — ${formatCurrency(updated.amount, language)} (${updated.date})`,
+          });
+        } else {
+          addChatMessage({ role: 'assistant', content: '❌ Transaksi tidak ditemukan.' });
+        }
+      }
+
+      if (action.type === 'delete_transaction') {
+        const fullId = resolveFullId(action.data.id as string);
+        const existing = transactions.find(t => t.id === fullId);
+        if (existing) {
+          await deleteTransaction(fullId);
+          addChatMessage({
+            role: 'assistant',
+            content: `🗑️ Transaksi "${existing.description}" (${formatCurrency(existing.amount, language)}) berhasil dihapus.`,
+          });
+        } else {
+          addChatMessage({ role: 'assistant', content: '❌ Transaksi tidak ditemukan.' });
+        }
+      }
+    }
+    setPendingActions([]);
+  };
+
+  const handleRejectActions = () => {
     addChatMessage({ role: 'assistant', content: t.chat.transactionCancelled });
-    setPendingAction(null);
+    setPendingActions([]);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const getActionLabel = (action: PendingAction): string => {
+    switch (action.type) {
+      case 'add_transaction':    return language === 'id' ? '➕ Tambah Transaksi' : '➕ Add Transaction';
+      case 'edit_transaction':   return language === 'id' ? '✏️ Edit Transaksi'   : '✏️ Edit Transaction';
+      case 'delete_transaction': return language === 'id' ? '🗑️ Hapus Transaksi'  : '🗑️ Delete Transaction';
+      default: return action.type;
     }
   };
 
@@ -139,16 +195,12 @@ export const ChatPanel: React.FC = () => {
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
             <FinMateLogo size={56} />
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2 mt-4">{t.chat.greeting}</h3>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-              {t.chat.intro}
-            </p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">{t.chat.intro}</p>
             <div className="space-y-2 w-full">
               {t.chat.suggestions.map((suggestion, i) => (
-                <button
-                  key={i}
-                  onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}
-                  className="w-full text-left px-4 py-3 rounded-xl text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors border border-zinc-200 dark:border-zinc-800"
-                >
+                <button key={i}
+                  onClick={() => { setInput(suggestion); textareaRef.current?.focus(); }}
+                  className="w-full text-left px-4 py-3 rounded-xl text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors border border-zinc-200 dark:border-zinc-800">
                   {suggestion}
                 </button>
               ))}
@@ -158,13 +210,11 @@ export const ChatPanel: React.FC = () => {
 
         {chatMessages.map((msg) => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`
-              max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed
-              ${msg.role === 'user'
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+              msg.role === 'user'
                 ? 'bg-emerald-600 text-white rounded-br-md'
                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-bl-md'
-              }
-            `}>
+            }`}>
               <div className="whitespace-pre-wrap">{msg.content}</div>
               <div className={`text-xs mt-1.5 ${msg.role === 'user' ? 'text-emerald-200' : 'text-zinc-400'}`}>
                 {msg.timestamp ? format(new Date(msg.timestamp), 'HH:mm') : ''}
@@ -173,23 +223,45 @@ export const ChatPanel: React.FC = () => {
           </div>
         ))}
 
-        {/* Pending action card */}
-        {pendingAction && (
+        {/* Pending actions card */}
+        {pendingActions.length > 0 && (
           <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl p-4">
             <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300 mb-3">
-              {t.chat.confirmTransaction}:
+              {language === 'id' ? 'Konfirmasi aksi berikut:' : 'Confirm the following actions:'}
             </p>
-            <div className="text-sm text-emerald-700 dark:text-emerald-400 space-y-1 mb-4">
-              <p>{t.common.type}: <span className="font-medium">{pendingAction.data.type === 'income' ? (language === 'id' ? 'Pemasukan' : 'Income') : (language === 'id' ? 'Pengeluaran' : 'Expense')}</span></p>
-              <p>{t.common.amount}: <span className="font-medium">{formatCurrency(Number(pendingAction.data.amount || 0), language)}</span></p>
-              <p>{t.common.category}: <span className="font-medium">{String(pendingAction.data.category || '')}</span></p>
-              <p>{t.common.description}: <span className="font-medium">{String(pendingAction.data.description || '')}</span></p>
+            <div className="space-y-2 mb-4">
+              {pendingActions.map((action, i) => (
+                <div key={i} className="text-sm text-emerald-700 dark:text-emerald-400 bg-white/50 dark:bg-zinc-800/50 rounded-lg p-3 space-y-1">
+                  <p className="font-semibold">{getActionLabel(action)}</p>
+                  {action.type === 'add_transaction' && (
+                    <>
+                      <p>{t.common.type}: <span className="font-medium">{action.data.type === 'income' ? (language === 'id' ? 'Pemasukan' : 'Income') : (language === 'id' ? 'Pengeluaran' : 'Expense')}</span></p>
+                      <p>{t.common.amount}: <span className="font-medium">{formatCurrency(Number(action.data.amount || 0), language)}</span></p>
+                      <p>{t.common.category}: <span className="font-medium">{String(action.data.category || '')}</span></p>
+                      <p>{t.common.description}: <span className="font-medium">{String(action.data.description || '')}</span></p>
+                      <p>{t.common.date}: <span className="font-medium">{String(action.data.date || '')}</span></p>
+                    </>
+                  )}
+                  {action.type === 'edit_transaction' && (
+                    <>
+                      <p>ID: <span className="font-medium font-mono">{String(action.data.id || '')}</span></p>
+                      {action.data.amount      && <p>{t.common.amount}: <span className="font-medium">{formatCurrency(Number(action.data.amount), language)}</span></p>}
+                      {action.data.description && <p>{t.common.description}: <span className="font-medium">{String(action.data.description)}</span></p>}
+                      {action.data.category    && <p>{t.common.category}: <span className="font-medium">{String(action.data.category)}</span></p>}
+                      {action.data.date        && <p>{t.common.date}: <span className="font-medium">{String(action.data.date)}</span></p>}
+                    </>
+                  )}
+                  {action.type === 'delete_transaction' && (
+                    <p>ID: <span className="font-medium font-mono">{String(action.data.id || '')}</span></p>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="flex gap-2">
-              <button onClick={handleConfirmAction} className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+              <button onClick={handleConfirmActions} className="flex-1 flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
                 <CheckIcon size={16} /> {t.common.confirm}
               </button>
-              <button onClick={handleRejectAction} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition-colors">
+              <button onClick={handleRejectActions} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-300 rounded-lg text-sm font-medium transition-colors">
                 <CloseIcon size={16} /> {t.common.cancel}
               </button>
             </div>
@@ -210,26 +282,29 @@ export const ChatPanel: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Input — Enter = newline, tombol Send = kirim */}
       <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-2">
-          <input
-            ref={inputRef}
-            type="text"
+        <div className="flex items-end gap-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl px-4 py-2">
+          <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
             placeholder={t.chat.placeholder}
-            className="flex-1 bg-transparent text-sm text-zinc-900 dark:text-white placeholder-zinc-400 outline-none"
+            rows={1}
+            className="flex-1 bg-transparent text-sm text-zinc-900 dark:text-white placeholder-zinc-400 outline-none resize-none leading-relaxed py-1"
+            style={{ maxHeight: '120px' }}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="p-2 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 disabled:opacity-30 transition-colors"
+            className="p-2 mb-0.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 disabled:opacity-30 transition-colors shrink-0"
           >
             <SendIcon size={18} />
           </button>
         </div>
+        <p className="text-xs text-zinc-400 text-center mt-1.5">
+          {language === 'id' ? 'Enter untuk baris baru · Tombol kirim untuk mengirim' : 'Enter for new line · Send button to send'}
+        </p>
       </div>
     </div>
   );
