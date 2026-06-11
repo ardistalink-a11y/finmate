@@ -22,7 +22,9 @@ interface AppState {
   userEmail: string | null;
   userName: string | null;
   userAvatar: string | null;
+  authReady: boolean;
   setUser: (id: string | null, email?: string, name?: string, avatar?: string) => void;
+  setAuthReady: (ready: boolean) => void;
 
   // Theme & Language
   theme: 'light' | 'dark';
@@ -82,7 +84,9 @@ export const useStore = create<AppState>((set, get) => ({
   userEmail: null,
   userName: null,
   userAvatar: null,
+  authReady: false,
   setUser: (id, email, name, avatar) => set({ userId: id, userEmail: email || null, userName: name || null, userAvatar: avatar || null }),
+  setAuthReady: (ready) => set({ authReady: ready }),
 
   // Theme & Language
   theme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
@@ -121,7 +125,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   loadData: async () => {
     set({ isLoading: true });
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
+    if (!uid) { set({ isLoading: false }); return; }
     const [transactions, rawAccounts, budgets, goals, debts, installments] = await Promise.all([
       storage.getTransactions(uid),
       storage.getAccounts(uid),
@@ -141,7 +146,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addTransaction: async (txData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     let accountId = txData.account_id;
     if (!accountId) {
       let cashAccount = get().accounts.find(a => a.type === 'cash');
@@ -186,13 +191,13 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateTransaction: async (tx) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.updateTransaction(tx, uid);
     set(s => ({ transactions: s.transactions.map(t => t.id === tx.id ? tx : t) }));
   },
 
   deleteTransaction: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const tx = get().transactions.find(t => t.id === id);
     await storage.deleteTransaction(id, uid);
     set(s => ({ transactions: s.transactions.filter(t => t.id !== id) }));
@@ -210,7 +215,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addAccount: async (accountData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const account: Account = {
       ...accountData,
       id: uuidv4(),
@@ -222,7 +227,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateAccount: async (account) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.updateAccount(account, uid);
     set(s => ({ accounts: s.accounts.map(a => a.id === account.id ? account : a) }));
   },
@@ -231,13 +236,13 @@ export const useStore = create<AppState>((set, get) => ({
     const account = get().accounts.find(a => a.id === id);
     const cashAccounts = get().accounts.filter(a => a.type === 'cash');
     if (account?.type === 'cash' && cashAccounts.length <= 1) return;
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.deleteAccount(id, uid);
     set(s => ({ accounts: s.accounts.filter(a => a.id !== id) }));
   },
 
   addBudget: async (budgetData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const budget: Budget = {
       ...budgetData,
       id: uuidv4(),
@@ -249,19 +254,19 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateBudget: async (budget) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.updateBudget(budget, uid);
     set(s => ({ budgets: s.budgets.map(b => b.id === budget.id ? budget : b) }));
   },
 
   deleteBudget: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.deleteBudget(id, uid);
     set(s => ({ budgets: s.budgets.filter(b => b.id !== id) }));
   },
 
   addGoal: async (goalData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const goal: Goal = {
       ...goalData,
       id: uuidv4(),
@@ -273,20 +278,20 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateGoal: async (goal) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.updateGoal(goal, uid);
     set(s => ({ goals: s.goals.map(g => g.id === goal.id ? goal : g) }));
   },
 
   deleteGoal: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.deleteGoal(id, uid);
     set(s => ({ goals: s.goals.filter(g => g.id !== id) }));
   },
 
   // Debts - affect balance but NOT income/expense
   addDebt: async (debtData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const debt: Debt = {
       ...debtData,
       id: uuidv4(),
@@ -309,7 +314,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateDebt: async (debt) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const oldDebt = get().debts.find(d => d.id === debt.id);
     await storage.updateDebt(debt, uid);
     set(s => ({ debts: s.debts.map(d => d.id === debt.id ? debt : d) }));
@@ -328,7 +333,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   deleteDebt: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const debt = get().debts.find(d => d.id === id);
     await storage.deleteDebt(id, uid);
     set(s => ({ debts: s.debts.filter(d => d.id !== id) }));
@@ -347,7 +352,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   // Installments
   addInstallment: async (instData) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const inst: Installment = {
       ...instData,
       id: uuidv4(),
@@ -359,19 +364,19 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateInstallment: async (inst) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.updateInstallment(inst, uid);
     set(s => ({ installments: s.installments.map(i => i.id === inst.id ? inst : i) }));
   },
 
   deleteInstallment: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     await storage.deleteInstallment(id, uid);
     set(s => ({ installments: s.installments.filter(i => i.id !== id) }));
   },
 
   payInstallment: async (id) => {
-    const uid = get().userId || undefined;
+    const uid = get().userId ?? '';
     const inst = get().installments.find(i => i.id === id);
     if (!inst || inst.is_completed) return;
 
