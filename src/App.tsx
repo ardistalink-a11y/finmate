@@ -145,7 +145,7 @@ function App() {
   if (!authReady) {
     return (
       <div className={`min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 ${theme === 'dark' ? 'dark' : ''}`}>
-        <div className="w-8 h-8 border-3 border-zinc-300 border-t-emerald-500 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-[3px] border-zinc-300 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     );
   }
