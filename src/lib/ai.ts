@@ -2,7 +2,7 @@ import { ChatMessage, Transaction, Account, Budget } from '@/types';
 
 // ─── HARDCODED API KEYS ──────────────────────────────────────
 const CLAUDE_API_KEY = 'YOUR_CLAUDE_KEY';
-const GEMINI_API_KEY = 'AQ.Ab8RN6IiaxScs_49aLe7oJeCWdHOAbOeK0HoxP6GH743tAAcGw';
+const GEMINI_API_KEY = 'AQ.Ab8RN6LSMH7Gb_iq-geyvABIM3Km5Nuq7Kt1koZfd89Byk-HkQ';
 // ─────────────────────────────────────────────────────────────
 
 export type AIProvider = 'claude' | 'gemini';
