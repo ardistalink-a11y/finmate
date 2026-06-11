@@ -1,17 +1,40 @@
 import { ChatMessage, Transaction, Account, Budget } from '@/types';
 
-interface AIRequestOptions {
-  apiKey: string;
-  endpoint: string;
-  messages: { role: string; content: string }[];
+// ─── HARDCODED API KEYS ──────────────────────────────────────
+const CLAUDE_API_KEY = 'YOUR_CLAUDE_KEY';
+const GEMINI_API_KEY = 'AQ.Ab8RN6IiaxScs_49aLe7oJeCWdHOAbOeK0HoxP6GH743tAAcGw';
+// ─────────────────────────────────────────────────────────────
+
+export type AIProvider = 'claude' | 'gemini';
+
+export const AI_MODELS: Record<AIProvider, { id: string; label: string }[]> = {
+  claude: [
+    { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet 4.6' },
+    { id: 'claude-haiku-4-5-20251001',  label: 'Claude Haiku 4.5' },
+  ],
+  gemini: [
+    { id: 'gemini-2.0-flash',   label: 'Gemini 2.0 Flash' },
+    { id: 'gemini-1.5-flash',   label: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro',     label: 'Gemini 1.5 Pro' },
+  ],
+};
+
+export function getAIProvider(): AIProvider {
+  return (localStorage.getItem('ai_provider') as AIProvider) || 'gemini';
 }
+
+export function getAIModel(): string {
+  return localStorage.getItem('ai_model') || 'gemini-2.0-flash';
+}
+
+// ── System Prompt ──────────────────────────────────────────────
 
 function getSystemPrompt(accounts: Account[], transactions: Transaction[], budgets: Budget[]): string {
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0);
   const thisMonth = new Date().toISOString().slice(0, 7);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(thisMonth));
-  const monthlyIncome = monthlyTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const monthlyExpense = monthlyTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const monthlyIncome    = monthlyTransactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const monthlyExpense   = monthlyTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
   const recentTx = transactions.slice(0, 10).map(t =>
     `- ${t.date}: ${t.type === 'income' ? '+' : '-'}Rp${t.amount.toLocaleString('id-ID')} (${t.category}) ${t.description}`
@@ -57,35 +80,73 @@ ATURAN RESPONSE:
 - Jika tidak jelas, tanyakan detail yang diperlukan`;
 }
 
-async function callConfiguredAI(options: AIRequestOptions): Promise<string> {
-  const response = await fetch(options.endpoint, {
+// ── Claude API ─────────────────────────────────────────────────
+
+async function callClaude(
+  systemPrompt: string,
+  messages: { role: string; content: string }[],
+  model: string
+): Promise<string> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${options.apiKey}`,
+      'x-api-key': CLAUDE_API_KEY,
+      'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      messages: options.messages,
-      temperature: 0.7,
+      model,
       max_tokens: 1024,
+      system: systemPrompt,
+      messages: messages.filter(m => m.role !== 'system'),
     }),
   });
 
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`API Error: ${response.status} - ${err}`);
+    throw new Error(`Claude API Error: ${response.status} - ${err}`);
   }
 
   const data = await response.json();
-  return (
-    data?.choices?.[0]?.message?.content ||
-    data?.message?.content ||
-    data?.content ||
-    data?.text ||
-    data?.response ||
-    JSON.stringify(data)
-  );
+  return data?.content?.[0]?.text || '';
 }
+
+// ── Gemini API (OpenAI-compatible) ─────────────────────────────
+
+async function callGemini(
+  systemPrompt: string,
+  messages: { role: string; content: string }[],
+  model: string
+): Promise<string> {
+  const response = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.filter(m => m.role !== 'system'),
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini API Error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content || '';
+}
+
+// ── Main export ────────────────────────────────────────────────
 
 export async function sendAIMessage(
   chatMessages: ChatMessage[],
@@ -93,36 +154,26 @@ export async function sendAIMessage(
   transactions: Transaction[],
   budgets: Budget[]
 ): Promise<{ content: string; action?: { type: string; data: Record<string, unknown> } }> {
-  const apiKey = localStorage.getItem('ai_api_key') || '';
-  const endpoint = localStorage.getItem('ai_endpoint') || '';
-
-  if (!apiKey || !endpoint) {
-    return {
-      content: 'Konfigurasi AI belum lengkap. Buka Settings lalu isi API key dan URL endpoint AI.',
-    };
-  }
-
+  const provider = getAIProvider();
+  const model    = getAIModel();
   const systemPrompt = getSystemPrompt(accounts, transactions, budgets);
 
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...chatMessages.slice(-20).map(m => ({
-      role: m.role,
-      content: m.content,
-    })),
-  ];
+  const messages = chatMessages.slice(-20).map(m => ({
+    role: m.role,
+    content: m.content,
+  }));
 
-  const options: AIRequestOptions = {
-    apiKey,
-    endpoint,
-    messages,
-  };
+  let responseText: string;
 
   try {
-    var responseText = await callConfiguredAI(options);
+    if (provider === 'claude') {
+      responseText = await callClaude(systemPrompt, messages, model);
+    } else {
+      responseText = await callGemini(systemPrompt, messages, model);
+    }
   } catch (error) {
     return {
-      content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}. Pastikan API key dan URL endpoint sudah benar.`,
+      content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}. Pastikan API key sudah benar di kode.`,
     };
   }
 
