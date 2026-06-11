@@ -68,6 +68,8 @@ interface AppState {
   addDebt: (debt: Omit<Debt, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   updateDebt: (debt: Debt) => Promise<void>;
   deleteDebt: (id: string) => Promise<void>;
+  addToDebt: (id: string, amount: number, description?: string, due_date?: string) => Promise<void>;
+  payDebt: (id: string, payAmount: number) => Promise<void>;
   addInstallment: (inst: Omit<Installment, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   updateInstallment: (inst: Installment) => Promise<void>;
   deleteInstallment: (id: string) => Promise<void>;
@@ -347,6 +349,56 @@ export const useStore = create<AppState>((set, get) => ({
         await storage.updateAccount(updated, uid);
         set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
       }
+    }
+  },
+
+  addToDebt: async (id, amount, description, due_date) => {
+    const uid = get().userId ?? '';
+    const debt = get().debts.find(d => d.id === id);
+    if (!debt) return;
+    const newDesc = description
+      ? (debt.description ? `${debt.description}; ${description}` : description)
+      : debt.description;
+    const updated = {
+      ...debt,
+      amount: debt.amount + amount,
+      description: newDesc,
+      ...(due_date && { due_date }),
+    };
+    await storage.updateDebt(updated, uid);
+    set(s => ({ debts: s.debts.map(d => d.id === id ? updated : d) }));
+    // Adjust balance for the added amount
+    const account = get().accounts.find(a => a.id === debt.account_id);
+    if (account) {
+      const delta = debt.type === 'debt' ? amount : -amount;
+      const updatedAcc = { ...account, balance: account.balance + delta };
+      await storage.updateAccount(updatedAcc, uid);
+      set(s => ({ accounts: s.accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) }));
+    }
+  },
+
+  payDebt: async (id, payAmount) => {
+    const uid = get().userId ?? '';
+    const debt = get().debts.find(d => d.id === id);
+    if (!debt) return;
+    const actualPaid = Math.min(payAmount, debt.amount);
+    const remaining = debt.amount - actualPaid;
+    const isFullyPaid = remaining <= 0;
+    const updated = {
+      ...debt,
+      amount: remaining,
+      is_paid: isFullyPaid,
+      ...(isFullyPaid && { paid_date: new Date().toISOString().slice(0, 10) }),
+    };
+    await storage.updateDebt(updated, uid);
+    set(s => ({ debts: s.debts.map(d => d.id === id ? updated : d) }));
+    // Adjust balance: debt=bayar keluar, receivable=terima masuk
+    const account = get().accounts.find(a => a.id === debt.account_id);
+    if (account) {
+      const delta = debt.type === 'debt' ? -actualPaid : actualPaid;
+      const updatedAcc = { ...account, balance: account.balance + delta };
+      await storage.updateAccount(updatedAcc, uid);
+      set(s => ({ accounts: s.accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) }));
     }
   },
 
