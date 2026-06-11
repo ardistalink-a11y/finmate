@@ -130,7 +130,7 @@ async function callClaude(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 1024,
+      max_tokens: 4096,
       system: systemPrompt,
       messages: messages.filter(m => m.role !== 'system'),
     }),
@@ -157,7 +157,7 @@ async function callGemini(
       },
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: 4096,
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages.filter(m => m.role !== 'system'),
