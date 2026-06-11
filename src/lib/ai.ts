@@ -2,7 +2,7 @@ import { ChatMessage, Transaction, Account, Budget } from '@/types';
 
 // ─── HARDCODED API KEYS ──────────────────────────────────────
 const CLAUDE_API_KEY = 'YOUR_CLAUDE_KEY';
-const GEMINI_API_KEY = 'AQ.Ab8RN6LSMH7Gb_iq-geyvABIM3Km5Nuq7Kt1koZfd89Byk-HkQ';
+const GEMINI_API_KEY = 'AQ.Ab8RN6IiaxScs_49aLe7oJeCWdHOAbOeK0HoxP6GH743tAAcGw';
 // ─────────────────────────────────────────────────────────────
 
 export type AIProvider = 'claude' | 'gemini';
@@ -13,9 +13,9 @@ export const AI_MODELS: Record<AIProvider, { id: string; label: string }[]> = {
     { id: 'claude-haiku-4-5-20251001',  label: 'Claude Haiku 4.5' },
   ],
   gemini: [
-    { id: 'gemini-2.0-flash',   label: 'Gemini 2.0 Flash' },
-    { id: 'gemini-1.5-flash',   label: 'Gemini 1.5 Flash' },
-    { id: 'gemini-1.5-pro',     label: 'Gemini 1.5 Pro' },
+    { id: 'gemini-3.1-flash-lite-preview-06-17', label: 'Gemini 3.1 Flash Lite (500 RPD)' },
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (20 RPD)' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (20 RPD)' },
   ],
 };
 
@@ -24,7 +24,7 @@ export function getAIProvider(): AIProvider {
 }
 
 export function getAIModel(): string {
-  return localStorage.getItem('ai_model') || 'gemini-2.0-flash';
+  return localStorage.getItem('ai_model') || 'gemini-3.1-flash-lite-preview-06-17';
 }
 
 // ── System Prompt ──────────────────────────────────────────────
