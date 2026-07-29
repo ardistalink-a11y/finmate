@@ -1,8 +1,8 @@
 import { ChatMessage, Transaction, Account, Budget, Debt, Goal, Installment } from '@/types';
 
-// ─── HARDCODED API KEYS ──────────────────────────────────────
-const CLAUDE_API_KEY = 'YOUR_CLAUDE_KEY';
-const GEMINI_API_KEY = 'AQ.Ab8RN6LSMH7Gb_iq-geyvABIM3Km5Nuq7Kt1koZfd89Byk-HkQ';
+// ─── API KEYS FROM ENV ──────────────────────────────────────
+const CLAUDE_API_KEY = import.meta.env.VITE_CLAUDE_API_KEY || 'YOUR_CLAUDE_KEY';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'YOUR_GEMINI_KEY';
 // ─────────────────────────────────────────────────────────────
 
 export type AIProvider = 'claude' | 'gemini';

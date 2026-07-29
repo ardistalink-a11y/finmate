@@ -1,10 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// ─── HARDCODED CONFIG ───────────────────────────────────────
-// Ganti 2 value di bawah ini dengan project Supabase kamu.
-// Setelah di-deploy, semua user langsung pakai Supabase.
-const SUPABASE_URL = 'https://psyqlhqlshadlpxhjsdw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzeXFsaHFsc2hhZGxweGhqc2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjE4MjMsImV4cCI6MjA5NjYzNzgyM30.ixv_-6L9D6_gls_F-lr-XmQmC2iwoMIqFng4OppTKPw';
+// ─── SUPABASE CONFIG ───────────────────────────────────────
+// Environment variables (set in Vercel or .env.local)
+// Fallback to hardcoded values for local development
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://psyqlhqlshadlpxhjsdw.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzeXFsaHFsc2hhZGxweGhqc2R3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNjE4MjMsImV4cCI6MjA5NjYzNzgyM30.ixv_-6L9D6_gls_F-lr-XmQmC2iwoMIqFng4OppTKPw';
 // ─────────────────────────────────────────────────────────────
 
 let supabaseInstance: SupabaseClient | null = null;
