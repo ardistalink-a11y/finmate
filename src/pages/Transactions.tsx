@@ -243,20 +243,20 @@ export const Transactions: React.FC = () => {
                         {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                    <div className="flex items-center gap-0.5 transition-all shrink-0">
                       <button
                         onClick={() => handleEdit(tx)}
                         className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors"
                         title="Edit"
                       >
-                        <EditIcon size={14} />
+                        <EditIcon size={16} />
                       </button>
                       <button
                         onClick={() => setShowConfirm(tx.id)}
                         className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
                         title="Hapus"
                       >
-                        <TrashIcon size={14} />
+                        <TrashIcon size={16} />
                       </button>
                     </div>
                   </div>
