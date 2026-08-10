@@ -323,7 +323,6 @@ export const useStore = create<AppState>((set, get) => ({
 
     // Handle payment status change
     if (oldDebt && !oldDebt.is_paid && debt.is_paid) {
-      // Just paid - reverse the balance effect
       const account = get().accounts.find(a => a.id === debt.account_id);
       if (account) {
         const delta = debt.type === 'debt' ? -debt.amount : debt.amount;

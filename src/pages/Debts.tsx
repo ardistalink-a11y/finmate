@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/store/useStore';
-import { PlusIcon, TrashIcon, CheckIcon } from '@/components/Icons';
+import { PlusIcon, TrashIcon, CheckIcon, EditIcon } from '@/components/Icons';
 import { Modal } from '@/components/Modal';
 import { IconBubble } from '@/components/NotionIcon';
 import { format, differenceInDays } from 'date-fns';
 import { getTranslation, formatCurrency } from '@/lib/i18n';
 
 export const Debts: React.FC = () => {
-  const { debts, accounts, addDebt, addToDebt, payDebt, deleteDebt, language } = useStore();
+  const { debts, accounts, addDebt, addToDebt, payDebt, deleteDebt, updateDebt, language } = useStore();
   const t = getTranslation(language);
 
   const [showModal, setShowModal]   = useState(false);
@@ -15,6 +15,8 @@ export const Debts: React.FC = () => {
   const [payingDebt, setPayingDebt] = useState<typeof debts[0] | null>(null);
   const [payAmount, setPayAmount]   = useState('');
   const [mergeInfo, setMergeInfo]   = useState<{ existing: typeof debts[0]; newAmount: number; desc: string; due: string } | null>(null);
+  const [editId, setEditId]         = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     type: 'debt' as 'debt' | 'receivable',
@@ -44,32 +46,82 @@ export const Debts: React.FC = () => {
     if (!form.person_name || !form.amount) return;
     const newAmount = parseFloat(form.amount);
 
-    // Cek apakah orang yang sama + tipe yang sama sudah ada
-    const existing = debts.find(
-      d => d.person_name.toLowerCase() === form.person_name.toLowerCase()
-        && d.type === form.type
-        && !d.is_paid
-    );
+    if (editId) {
+      // Edit existing debt
+      const oldDebt = debts.find(d => d.id === editId);
+      if (!oldDebt) return;
 
-    if (existing) {
-      // Tampilkan konfirmasi merge
-      setMergeInfo({ existing, newAmount, desc: form.description, due: form.due_date });
-      return;
+      const oldAmount = oldDebt.amount;
+      const oldType = oldDebt.type;
+      const oldAccountId = oldDebt.account_id;
+
+      const updated: typeof oldDebt = {
+        ...oldDebt,
+        type: form.type,
+        person_name: form.person_name,
+        amount: newAmount,
+        description: form.description,
+        date: form.date,
+        due_date: form.due_date || undefined,
+        account_id: form.account_id || oldAccountId,
+      };
+
+      await updateDebt(updated);
+
+      // Revert old balance effect
+      if (oldAccountId) {
+        const oldAccount = accounts.find(a => a.id === oldAccountId);
+        if (oldAccount) {
+          const revertDelta = oldType === 'debt' ? -oldAmount : oldAmount;
+          const updatedAcc = { ...oldAccount, balance: oldAccount.balance + revertDelta };
+          const { storage } = await import('@/lib/storage');
+          await storage.updateAccount(updatedAcc, useStore.getState().userId ?? '');
+          useStore.setState(s => ({ accounts: s.accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) }));
+        }
+      }
+
+      // Apply new balance effect
+      const uid = useStore.getState().userId ?? '';
+      const { storage } = await import('@/lib/storage');
+      if (updated.account_id) {
+        const newAccount = useStore.getState().accounts.find(a => a.id === updated.account_id);
+        if (newAccount) {
+          const delta = form.type === 'debt' ? newAmount : -newAmount;
+          const updatedAcc = { ...newAccount, balance: newAccount.balance + delta };
+          await storage.updateAccount(updatedAcc, uid);
+          useStore.setState(s => ({ accounts: s.accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) }));
+        }
+      }
+
+      setEditId(null);
+    } else {
+      // Add new debt
+      const existing = debts.find(
+        d => d.person_name.toLowerCase() === form.person_name.toLowerCase()
+          && d.type === form.type
+          && !d.is_paid
+      );
+
+      if (existing) {
+        setMergeInfo({ existing, newAmount, desc: form.description, due: form.due_date });
+        return;
+      }
+
+      await addDebt({
+        type: form.type,
+        person_name: form.person_name,
+        amount: newAmount,
+        description: form.description,
+        date: form.date,
+        due_date: form.due_date || undefined,
+        account_id: form.account_id || accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || '',
+        is_paid: false,
+      });
     }
-
-    await addDebt({
-      type: form.type,
-      person_name: form.person_name,
-      amount: newAmount,
-      description: form.description,
-      date: form.date,
-      due_date: form.due_date || undefined,
-      account_id: form.account_id || accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || '',
-      is_paid: false,
-    });
 
     resetForm();
     setShowModal(false);
+    setEditId(null);
   };
 
   const handleConfirmMerge = async () => {
@@ -106,6 +158,32 @@ export const Debts: React.FC = () => {
     setPayAmount('');
   };
 
+  const handleEdit = (debt: typeof debts[0]) => {
+    setEditId(debt.id);
+    setForm({
+      type: debt.type,
+      person_name: debt.person_name,
+      amount: String(debt.amount),
+      description: debt.description,
+      date: debt.date,
+      due_date: debt.due_date || '',
+      account_id: debt.account_id || '',
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteDebt(id);
+    setShowDeleteConfirm(null);
+  };
+
+  const cancelEdit = () => {
+    setShowModal(false);
+    setEditId(null);
+    resetForm();
+    setMergeInfo(null);
+  };
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* Header */}
@@ -114,7 +192,7 @@ export const Debts: React.FC = () => {
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">{t.debts.title}</h2>
           <p className="text-sm text-zinc-500">{filteredDebts.length} {t.debts.activeItems}</p>
         </div>
-        <button onClick={() => setShowModal(true)}
+        <button onClick={() => { setEditId(null); setShowModal(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors">
           <PlusIcon size={16} /> {t.debts.addDebt}
         </button>
@@ -158,18 +236,21 @@ export const Debts: React.FC = () => {
           const daysUntilDue = debt.due_date ? differenceInDays(new Date(debt.due_date), new Date()) : null;
           const isOverdue = daysUntilDue !== null && daysUntilDue < 0;
           return (
-            <div key={debt.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 group">
+            <div key={debt.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5">
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1">
                   <IconBubble name={debt.type === 'debt' ? 'donation' : 'gift'} color={debt.type === 'debt' ? '#ef4444' : '#22c55e'} size="md" />
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 dark:text-white">{debt.person_name}</p>
                     <p className="text-xs text-zinc-500">{debt.type === 'debt' ? t.debts.debtDesc : t.debts.receivableDesc}</p>
                   </div>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => deleteDebt(debt.id)} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors">
-                    <TrashIcon size={14} />
+                <div className="flex gap-1 shrink-0">
+                  <button onClick={() => handleEdit(debt)} className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors" title="Edit">
+                    <EditIcon size={16} />
+                  </button>
+                  <button onClick={() => setShowDeleteConfirm(debt.id)} className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors" title="Hapus">
+                    <TrashIcon size={16} />
                   </button>
                 </div>
               </div>
@@ -225,8 +306,8 @@ export const Debts: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Tambah */}
-      <Modal open={showModal} onClose={() => { setShowModal(false); resetForm(); setMergeInfo(null); }} title={t.debts.addDebt}>
+      {/* Modal Tambah/Edit */}
+      <Modal open={showModal} onClose={cancelEdit} title={editId ? (language === 'id' ? 'Edit Hutang/Piutang' : 'Edit Debt') : t.debts.addDebt}>
         {!mergeInfo ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex gap-2">
@@ -269,9 +350,18 @@ export const Debts: React.FC = () => {
                   className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-white outline-none" />
               </div>
             </div>
-            <button type="submit" className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors">
-              {t.common.save}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              >
+                {t.common.cancel || 'Batal'}
+              </button>
+              <button type="submit" className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors">
+                {editId ? (language === 'id' ? 'Simpan Perubahan' : 'Save Changes') : t.common.save}
+              </button>
+            </div>
           </form>
         ) : (
           /* Konfirmasi merge */
@@ -352,6 +442,29 @@ export const Debts: React.FC = () => {
             </button>
           </div>
         )}
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!showDeleteConfirm} onClose={() => setShowDeleteConfirm(null)} title={language === 'id' ? 'Hapus Hutang/Piutang' : 'Delete Debt'}>
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            {language === 'id' ? 'Apakah kamu yakin ingin menghapus hutang/piutang ini? Saldo akun akan dikembalikan.' : 'Are you sure you want to delete this debt? Account balance will be reverted.'}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowDeleteConfirm(null)}
+              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            >
+              {t.common.cancel || 'Batal'}
+            </button>
+            <button
+              onClick={() => showDeleteConfirm && handleDelete(showDeleteConfirm)}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              {t.common.delete || 'Hapus'}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
