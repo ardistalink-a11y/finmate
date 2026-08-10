@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/store/useStore';
-import { PlusIcon, TrashIcon, FilterIcon } from '@/components/Icons';
+import { PlusIcon, TrashIcon, FilterIcon, EditIcon } from '@/components/Icons';
 import { Modal } from '@/components/Modal';
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, Transaction } from '@/types';
 import { IconBubble, NotionIcon } from '@/components/NotionIcon';
+import * as storage from '@/lib/storage';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,8 +16,10 @@ const getCategoryMeta = (type: 'income' | 'expense' | 'transfer', category: stri
 };
 
 export const Transactions: React.FC = () => {
-  const { transactions, accounts, addTransaction, deleteTransaction } = useStore();
+  const { transactions, accounts, budgets, addTransaction, updateTransaction, deleteTransaction } = useStore();
   const [showAdd, setShowAdd] = useState(false);
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -57,17 +60,114 @@ export const Transactions: React.FC = () => {
     e.preventDefault();
     if (!form.category || !form.amount) return;
 
-    await addTransaction({
-      type: form.type,
-      category: form.category,
-      amount: parseFloat(form.amount),
-      description: form.description,
-      date: form.date,
-      account_id: form.account_id || accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || uuidv4(),
-    });
+    const uid = useStore.getState().userId ?? '';
+    const newAmount = parseFloat(form.amount);
+    const accountId = form.account_id || accounts.find(a => a.type === 'cash')?.id || accounts[0]?.id || uuidv4();
+
+    if (editId) {
+      // Edit existing transaction
+      const oldTx = transactions.find(t => t.id === editId);
+      if (!oldTx) return;
+
+      const oldAmount = oldTx.amount;
+      const oldType = oldTx.type;
+      const oldAccountId = oldTx.account_id;
+      const oldCategory = oldTx.category;
+
+      const updatedTx: Transaction = {
+        ...oldTx,
+        type: form.type,
+        category: form.category,
+        amount: newAmount,
+        description: form.description,
+        date: form.date,
+        account_id: accountId,
+      };
+
+      await updateTransaction(updatedTx);
+
+      // Fix old account balance: revert old transaction
+      if (oldAccountId) {
+        const oldAccount = accounts.find(a => a.id === oldAccountId);
+        if (oldAccount) {
+          const revertDelta = oldType === 'income' ? -oldAmount : oldAmount;
+          const updatedAcc = { ...oldAccount, balance: oldAccount.balance + revertDelta };
+          await storage.updateAccount(updatedAcc, uid);
+          useStore.setState({ accounts: accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) });
+        }
+      }
+
+      // Fix new account balance: apply new transaction
+      if (accountId) {
+        const newAccount = useStore.getState().accounts.find(a => a.id === accountId);
+        if (newAccount) {
+          const applyDelta = form.type === 'income' ? newAmount : -newAmount;
+          const updatedAcc = { ...newAccount, balance: newAccount.balance + applyDelta };
+          await storage.updateAccount(updatedAcc, uid);
+          useStore.setState({ accounts: useStore.getState().accounts.map(a => a.id === updatedAcc.id ? updatedAcc : a) });
+        }
+      }
+
+      // Fix budget: revert old expense category, apply new expense category
+      const currentBudgets = useStore.getState().budgets;
+      if (oldType === 'expense' && oldCategory !== form.category) {
+        const oldBudget = currentBudgets.find(b => b.category === oldCategory);
+        if (oldBudget) {
+          const updated = { ...oldBudget, spent: Math.max(0, oldBudget.spent - oldAmount) };
+          await storage.updateBudget(updated, uid);
+          useStore.setState({ budgets: useStore.getState().budgets.map(b => b.id === updated.id ? updated : b) });
+        }
+      }
+      if (form.type === 'expense') {
+        const newBudget = useStore.getState().budgets.find(b => b.category === form.category);
+        if (newBudget) {
+          const delta = oldType === 'expense' && oldCategory === form.category ? (newAmount - oldAmount) : newAmount;
+          const updated = { ...newBudget, spent: newBudget.spent + delta };
+          await storage.updateBudget(updated, uid);
+          useStore.setState({ budgets: useStore.getState().budgets.map(b => b.id === updated.id ? updated : b) });
+        }
+      }
+
+      setEditId(null);
+    } else {
+      // Add new transaction
+      await addTransaction({
+        type: form.type,
+        category: form.category,
+        amount: newAmount,
+        description: form.description,
+        date: form.date,
+        account_id: accountId,
+      });
+    }
 
     setForm({ type: 'expense', category: '', amount: '', description: '', date: format(new Date(), 'yyyy-MM-dd'), account_id: '' });
     setShowAdd(false);
+    setEditId(null);
+  };
+
+  const handleEdit = (tx: Transaction) => {
+    setEditId(tx.id);
+    setForm({
+      type: tx.type,
+      category: tx.category,
+      amount: String(tx.amount),
+      description: tx.description,
+      date: tx.date,
+      account_id: tx.account_id || '',
+    });
+    setShowAdd(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteTransaction(id);
+    setShowConfirm(null);
+  };
+
+  const cancelEdit = () => {
+    setShowAdd(false);
+    setEditId(null);
+    setForm({ type: 'expense', category: '', amount: '', description: '', date: format(new Date(), 'yyyy-MM-dd'), account_id: '' });
   };
 
   const categories = form.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
@@ -81,7 +181,7 @@ export const Transactions: React.FC = () => {
           <p className="text-sm text-zinc-500">{transactions.length} total transaksi</p>
         </div>
         <button
-          onClick={() => setShowAdd(true)}
+          onClick={() => { setEditId(null); setShowAdd(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
         >
           <PlusIcon size={16} /> Tambah
@@ -143,12 +243,22 @@ export const Transactions: React.FC = () => {
                         {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </p>
                     </div>
-                    <button
-                      onClick={() => deleteTransaction(tx.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-400 hover:text-red-500 transition-all"
-                    >
-                      <TrashIcon size={14} />
-                    </button>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                      <button
+                        onClick={() => handleEdit(tx)}
+                        className="p-1.5 text-zinc-400 hover:text-blue-500 transition-colors"
+                        title="Edit"
+                      >
+                        <EditIcon size={14} />
+                      </button>
+                      <button
+                        onClick={() => setShowConfirm(tx.id)}
+                        className="p-1.5 text-zinc-400 hover:text-red-500 transition-colors"
+                        title="Hapus"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -163,8 +273,8 @@ export const Transactions: React.FC = () => {
         )}
       </div>
 
-      {/* Add Modal */}
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Tambah Transaksi">
+      {/* Add/Edit Modal */}
+      <Modal open={showAdd} onClose={cancelEdit} title={editId ? 'Edit Transaksi' : 'Tambah Transaksi'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Type toggle */}
           <div className="flex gap-2">
@@ -263,13 +373,45 @@ export const Transactions: React.FC = () => {
             </div>
           )}
 
-          <button
-            type="submit"
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
-          >
-            Simpan Transaksi
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={cancelEdit}
+              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              {editId ? 'Simpan Perubahan' : 'Simpan Transaksi'}
+            </button>
+          </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!showConfirm} onClose={() => setShowConfirm(null)} title="Hapus Transaksi">
+        <div className="space-y-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Apakah kamu yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan dan saldo akun akan dikembalikan.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowConfirm(null)}
+              className="flex-1 py-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl text-sm font-medium transition-colors hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            >
+              Batal
+            </button>
+            <button
+              onClick={() => showConfirm && handleDelete(showConfirm)}
+              className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              Ya, Hapus
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
