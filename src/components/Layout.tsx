@@ -5,16 +5,19 @@ import { signOut } from '@/lib/supabase';
 import { getTranslation } from '@/lib/i18n';
 
 const FinMateLogo: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-    <rect width="32" height="32" rx="8" fill="url(#logo-grad)" />
-    <path d="M8 12h6M8 16h10M8 20h14" stroke="white" strokeWidth="2" strokeLinecap="round" />
-    <path d="M20 8l4 4-4 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
     <defs>
-      <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#10b981" />
-        <stop offset="1" stopColor="#047857" />
-      </linearGradient>
+      <clipPath id="fmCircleClip">
+        <circle cx="60" cy="60" r="60"/>
+      </clipPath>
     </defs>
+    <circle cx="60" cy="60" r="60" fill="#10B981" />
+    <g clipPath="url(#fmCircleClip)">
+      <path d="M4 100 L34 24 L60 66 L86 -6 L128 100"
+            fill="none" stroke="#FFFFFF" strokeWidth="15"
+            strokeLinecap="square" strokeLinejoin="round"/>
+      <circle cx="86" cy="-6" r="11" fill="#FBBF24" />
+    </g>
   </svg>
 );
 
