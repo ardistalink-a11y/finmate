@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="512" height="512">
+  <defs>
+    <clipPath id="finmateCircleClip">
+      <circle cx="60" cy="60" r="60"/>
+    </clipPath>
+  </defs>
+  <circle cx="60" cy="60" r="60" fill="#10B981"/>
+  <g clip-path="url(#finmateCircleClip)">
+    <path d="M4 100 L34 24 L60 66 L86 -6 L128 100"
+          fill="none" stroke="#FFFFFF" stroke-width="15"
+          stroke-linecap="square" stroke-linejoin="round"/>
+    <circle cx="86" cy="-6" r="11" fill="#FBBF24"/>
+  </g>
+</svg>
