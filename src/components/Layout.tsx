@@ -108,12 +108,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800
         flex flex-col
       `}>
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <FinMateLogo size={28} />
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+        {/* Mobile-only close control — sidebar branding intentionally removed for a minimal layout */}
+        <div className="h-12 flex items-center justify-end px-5 border-b border-zinc-200 dark:border-zinc-800 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Tutup menu"
+            className="p-1 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          >
             <CloseIcon size={18} />
           </button>
         </div>
