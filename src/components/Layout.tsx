@@ -4,22 +4,50 @@ import { HomeIcon, WalletIcon, ChartIcon, TargetIcon, BudgetIcon, ListIcon, Sett
 import { signOut } from '@/lib/supabase';
 import { getTranslation } from '@/lib/i18n';
 
-const FinMateLogo: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
-    <defs>
-      <clipPath id="fmCircleClip">
-        <circle cx="60" cy="60" r="60"/>
-      </clipPath>
-    </defs>
-    <circle cx="60" cy="60" r="60" fill="#10B981" />
-    <g clipPath="url(#fmCircleClip)">
-      <path d="M4 100 L34 24 L60 66 L86 -6 L128 100"
-            fill="none" stroke="#FFFFFF" strokeWidth="15"
-            strokeLinecap="square" strokeLinejoin="round"/>
-      <circle cx="86" cy="-6" r="11" fill="#FBBF24" />
-    </g>
-  </svg>
-);
+const FinMateLogo: React.FC<{ size?: number }> = ({ size = 28 }) => {
+  const scale = size / 28;
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: `${0.35 * size}px` }}>
+      {/* Dot Orbit Icon */}
+      <svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ flexShrink: 0 }}>
+        <rect width="44" height="44" rx="10" fill="#09090B" />
+        <g transform={`rotate(20 22 22)`}><circle cx="22" cy="6" r="6.5" fill="#22E6A6"/></g>
+        <g transform={`rotate(110 22 22)`}><circle cx="22" cy="6" r="5.5" fill="#F5B942"/></g>
+        <g transform={`rotate(200 22 22)`}><circle cx="22" cy="6" r="4.5" fill="#6C8CFF"/></g>
+        <g transform={`rotate(290 22 22)`}><circle cx="22" cy="6" r="3.5" fill="#F2545B"/></g>
+      </svg>
+      {/* Wordmark with mint dot-i */}
+      <span
+        style={{
+          fontFamily: "'Sora', 'Space Grotesk', 'Poppins', 'Inter', sans-serif",
+          fontWeight: 700,
+          fontSize: `${size * 0.75}px`,
+          letterSpacing: '-0.02em',
+          color: '#F5F5F7',
+          display: 'flex',
+          alignItems: 'center',
+          lineHeight: 1,
+        }}
+      >
+        f<span style={{ position: 'relative', display: 'inline-block' }}>
+          <span style={{ visibility: 'hidden' }}>i</span>
+          <span style={{
+            position: 'absolute',
+            left: '50%',
+            top: '-0.38em',
+            transform: 'translateX(-50%)',
+            width: '0.16em',
+            height: '0.16em',
+            aspectRatio: '1',
+            borderRadius: '50%',
+            background: '#22E6A6',
+            fontSize: `${size * 0.75}px`,
+          }} />
+        </span>nmate
+      </span>
+    </span>
+  );
+};
 
 // Icons for debt and installment
 const DebtIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">
+  <!-- Finmate — Dot Orbit mark (final)
+       Order matters: mint > amber > indigo > coral, clockwise from 20deg.
+       Do not reorder colors/sizes — the descending sequence is intentional. -->
+  <g transform="rotate(20 22 22)"><circle cx="22" cy="6" r="6.5" fill="#22E6A6"/></g>   <!-- tabungan/investasi -->
+  <g transform="rotate(110 22 22)"><circle cx="22" cy="6" r="5.5" fill="#F5B942"/></g>  <!-- pemasukan -->
+  <g transform="rotate(200 22 22)"><circle cx="22" cy="6" r="4.5" fill="#6C8CFF"/></g>  <!-- AI insight -->
+  <g transform="rotate(290 22 22)"><circle cx="22" cy="6" r="3.5" fill="#F2545B"/></g>  <!-- pengeluaran -->
+</svg>
