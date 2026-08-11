@@ -6,6 +6,13 @@ import { getTranslation } from '@/lib/i18n';
 
 const FinMateLogo: React.FC<{ size?: number }> = ({ size = 28 }) => {
   const scale = size / 28;
+  const [themeKey, setThemeKey] = React.useState(0);
+  React.useEffect(() => {
+    const unsub = useStore.subscribe((state) => setThemeKey(k => k + 1));
+    return unsub;
+  }, []);
+  const isDark = useStore.getState().theme === 'dark';
+  const textColor = isDark ? '#F5F5F7' : '#18181b';
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: `${0.35 * size}px` }}>
       {/* Dot Orbit Icon */}
@@ -22,7 +29,7 @@ const FinMateLogo: React.FC<{ size?: number }> = ({ size = 28 }) => {
           fontWeight: 700,
           fontSize: `${size * 0.75}px`,
           letterSpacing: '-0.02em',
-          color: '#F5F5F7',
+          color: textColor,
           display: 'flex',
           alignItems: 'center',
           lineHeight: 1,
