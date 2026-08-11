@@ -10,7 +10,6 @@ const FinMateLogo: React.FC<{ size?: number }> = ({ size = 28 }) => {
     <span style={{ display: 'flex', alignItems: 'center', gap: `${0.35 * size}px` }}>
       {/* Dot Orbit Icon */}
       <svg width={size} height={size} viewBox="0 0 44 44" fill="none" style={{ flexShrink: 0 }}>
-        <rect width="44" height="44" rx="10" fill="#09090B" />
         <g transform={`rotate(20 22 22)`}><circle cx="22" cy="6" r="6.5" fill="#22E6A6"/></g>
         <g transform={`rotate(110 22 22)`}><circle cx="22" cy="6" r="5.5" fill="#F5B942"/></g>
         <g transform={`rotate(200 22 22)`}><circle cx="22" cy="6" r="4.5" fill="#6C8CFF"/></g>
@@ -105,8 +104,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
-            <FinMateLogo size={32} />
-            <span className="font-semibold text-lg text-zinc-900 dark:text-white tracking-tight">{t.appName}</span>
+            <FinMateLogo size={28} />
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
             <CloseIcon size={18} />
