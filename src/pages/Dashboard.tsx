@@ -155,7 +155,20 @@ export const Dashboard: React.FC = () => {
             <>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
-                  <Pie data={categoryData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={70}
+                    dataKey="value"
+                    paddingAngle={3}
+                    cursor="pointer"
+                    onClick={(_, index) => {
+                      const category = categoryData[index];
+                      if (category) openCategoryTransactions(category.name);
+                    }}
+                  >
                     {categoryData.map((entry, idx) => (
                       <Cell key={idx} fill={entry.color} />
                     ))}
