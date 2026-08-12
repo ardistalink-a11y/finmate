@@ -45,7 +45,7 @@ const getBalanceDeltas = (transaction: Transaction) => {
 };
 
 export const Transactions: React.FC = () => {
-  const { transactions, accounts, addTransaction, updateTransaction, deleteTransaction } = useStore();
+  const { transactions, accounts, addTransaction, updateTransaction, deleteTransaction, transactionCategoryFilter, setTransactionCategoryFilter } = useStore();
   const [showAdd, setShowAdd] = useState(false);
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -57,12 +57,13 @@ export const Transactions: React.FC = () => {
   const filteredTx = useMemo(() => {
     let items = transactions;
     if (filter !== 'all') items = items.filter((transaction) => transaction.type === filter);
+    if (transactionCategoryFilter) items = items.filter((transaction) => transaction.category === transactionCategoryFilter);
     if (searchTerm) {
       const query = searchTerm.toLowerCase();
       items = items.filter((transaction) => transaction.description.toLowerCase().includes(query) || transaction.category.toLowerCase().includes(query));
     }
     return items;
-  }, [transactions, filter, searchTerm]);
+  }, [transactions, filter, transactionCategoryFilter, searchTerm]);
 
   const grouped = useMemo(() => {
     const groups: Record<string, typeof filteredTx> = {};
@@ -238,6 +239,19 @@ export const Transactions: React.FC = () => {
           <PlusIcon size={16} /> Tambah
         </button>
       </div>
+
+      {transactionCategoryFilter && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm dark:border-emerald-500/25 dark:bg-emerald-500/10">
+          <p className="min-w-0 truncate text-emerald-800 dark:text-emerald-300">Menampilkan kategori: <span className="font-semibold">{transactionCategoryFilter}</span></p>
+          <button
+            type="button"
+            onClick={() => setTransactionCategoryFilter(null)}
+            className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:text-emerald-300 dark:hover:bg-emerald-500/20"
+          >
+            Tampilkan semua
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1">

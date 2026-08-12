@@ -72,7 +72,7 @@ const InstallmentIcon: React.FC<{ size?: number; className?: string }> = ({ size
 );
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { theme, toggleTheme, currentPage, setCurrentPage, sidebarOpen, setSidebarOpen, chatOpen, setChatOpen, userName, userAvatar, language } = useStore();
+  const { theme, toggleTheme, currentPage, setCurrentPage, setTransactionCategoryFilter, sidebarOpen, setSidebarOpen, chatOpen, setChatOpen, userName, userAvatar, language } = useStore();
   const t = getTranslation(language);
 
   const NAV_ITEMS = [
@@ -126,7 +126,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             return (
               <button
                 key={item.id}
-                onClick={() => { setCurrentPage(item.id); setSidebarOpen(false); }}
+                onClick={() => { setCurrentPage(item.id); setTransactionCategoryFilter(null); setSidebarOpen(false); }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                   ${active

@@ -9,9 +9,13 @@ import { IconBubble } from '@/components/NotionIcon';
 import { getTranslation, formatCurrency } from '@/lib/i18n';
 
 export const Dashboard: React.FC = () => {
-  const { transactions, accounts, budgets, language } = useStore();
+  const { transactions, accounts, budgets, language, setCurrentPage, setTransactionCategoryFilter } = useStore();
   const t = getTranslation(language);
   const dateLocale = language === 'id' ? idLocale : enUS;
+  const openCategoryTransactions = (category: string) => {
+    setTransactionCategoryFilter(category);
+    setCurrentPage('transactions');
+  };
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -141,7 +145,12 @@ export const Dashboard: React.FC = () => {
 
         {/* Category pie */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">{t.dashboard.categoryBreakdown}</h3>
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{t.dashboard.categoryBreakdown}</h3>
+              <p className="text-xs text-zinc-500 mt-1">Ketuk kategori untuk melihat transaksinya</p>
+            </div>
+          </div>
           {categoryData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={160}>
@@ -157,15 +166,21 @@ export const Dashboard: React.FC = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="mt-3 space-y-2">
-                {categoryData.slice(0, 4).map((cat, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                      <span className="text-zinc-600 dark:text-zinc-400">{cat.name}</span>
-                    </div>
-                    <span className="font-medium text-zinc-900 dark:text-white">{formatCurrency(cat.value, language)}</span>
-                  </div>
+              <div className="mt-3 space-y-1">
+                {categoryData.slice(0, 4).map((cat) => (
+                  <button
+                    key={cat.name}
+                    type="button"
+                    onClick={() => openCategoryTransactions(cat.name)}
+                    className="w-full flex items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-xs transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                    aria-label={`Lihat transaksi kategori ${cat.name}`}
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 shrink-0 rounded-full" style={{ backgroundColor: cat.color }} />
+                      <span className="truncate text-zinc-600 dark:text-zinc-400">{cat.name}</span>
+                    </span>
+                    <span className="font-medium whitespace-nowrap text-zinc-900 dark:text-white">{formatCurrency(cat.value, language)}</span>
+                  </button>
                 ))}
               </div>
             </>

@@ -64,6 +64,8 @@ interface AppState {
   // Navigation
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  transactionCategoryFilter: string | null;
+  setTransactionCategoryFilter: (category: string | null) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   chatOpen: boolean;
@@ -138,6 +140,8 @@ export const useStore = create<AppState>((set, get) => ({
   // Navigation
   currentPage: 'dashboard',
   setCurrentPage: (page) => set({ currentPage: page }),
+  transactionCategoryFilter: null,
+  setTransactionCategoryFilter: (category) => set({ transactionCategoryFilter: category }),
   sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   chatOpen: false,
