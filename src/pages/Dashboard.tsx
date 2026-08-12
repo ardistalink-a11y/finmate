@@ -185,17 +185,22 @@ export const Dashboard: React.FC = () => {
           {recentTx.length > 0 ? (
             <div className="space-y-3">
               {recentTx.map(tx => {
+                const isTransfer = tx.type === 'transfer';
                 const cats = tx.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
                 const cat = cats.find(c => c.name === tx.category) || cats.find(c => c.name === 'Lainnya');
                 return (
                   <div key={tx.id} className="flex items-center gap-3">
-                    <IconBubble name={cat?.icon} color={cat?.color} />
+                    {isTransfer ? (
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-sm font-semibold text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">⇄</div>
+                    ) : (
+                      <IconBubble name={cat?.icon} color={cat?.color} />
+                    )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">{tx.description || tx.category}</p>
-                      <p className="text-xs text-zinc-500">{format(new Date(tx.date), 'dd MMM yyyy', { locale: dateLocale })}</p>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">{tx.description || (isTransfer ? 'Transfer antar akun' : tx.category)}</p>
+                      <p className="text-xs text-zinc-500">{isTransfer ? 'Transfer antar akun' : format(new Date(tx.date), 'dd MMM yyyy', { locale: dateLocale })}</p>
                     </div>
-                    <p className={`text-sm font-semibold ${tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, language)}
+                    <p className={`text-sm font-semibold ${isTransfer ? 'text-blue-600 dark:text-blue-400' : tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {isTransfer ? formatCurrency(tx.amount, language) : `${tx.type === 'income' ? '+' : '-'}${formatCurrency(tx.amount, language)}`}
                     </p>
                   </div>
                 );

@@ -198,17 +198,26 @@ export const useStore = create<AppState>((set, get) => ({
     const saved = await storage.addTransaction(tx, uid);
     set(s => ({ transactions: [saved, ...s.transactions] }));
 
-    // Update account balance
-    const accounts = get().accounts;
-    if (tx.account_id) {
-      const account = accounts.find(a => a.id === tx.account_id);
-      if (account) {
-        const delta = tx.type === 'income' ? tx.amount : -tx.amount;
-        const updated = { ...account, balance: account.balance + delta };
-        await storage.updateAccount(updated, uid);
-        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
-      }
+    // Update account balance. A transfer moves funds between two accounts and is not income or expense.
+    const accountDeltas: Record<string, number> = {};
+    const addAccountDelta = (accountId: string | undefined, delta: number) => {
+      if (!accountId) return;
+      accountDeltas[accountId] = (accountDeltas[accountId] || 0) + delta;
+    };
+    if (tx.type === 'transfer') {
+      addAccountDelta(tx.account_id, -tx.amount);
+      addAccountDelta(tx.to_account_id, tx.amount);
+    } else {
+      addAccountDelta(tx.account_id, tx.type === 'income' ? tx.amount : -tx.amount);
     }
+    const currentAccounts = get().accounts;
+    const updatedAccounts = currentAccounts.map((account) => {
+      const delta = accountDeltas[account.id] || 0;
+      return delta === 0 ? account : { ...account, balance: account.balance + delta };
+    });
+    const changedAccounts = updatedAccounts.filter((account, index) => account !== currentAccounts[index]);
+    await Promise.all(changedAccounts.map((account) => storage.updateAccount(account, uid)));
+    if (changedAccounts.length > 0) set({ accounts: updatedAccounts });
 
     // Update budget spent
     if (tx.type === 'expense') {
@@ -234,15 +243,27 @@ export const useStore = create<AppState>((set, get) => ({
     await storage.deleteTransaction(id, uid);
     set(s => ({ transactions: s.transactions.filter(t => t.id !== id) }));
 
-    // Revert account balance
-    if (tx && tx.account_id) {
-      const account = get().accounts.find(a => a.id === tx.account_id);
-      if (account) {
-        const delta = tx.type === 'income' ? -tx.amount : tx.amount;
-        const updated = { ...account, balance: account.balance + delta };
-        await storage.updateAccount(updated, uid);
-        set(s => ({ accounts: s.accounts.map(a => a.id === updated.id ? updated : a) }));
+    // Revert account balance. Deleting a transfer returns the amount to the source and removes it from the destination.
+    if (tx) {
+      const accountDeltas: Record<string, number> = {};
+      const addAccountDelta = (accountId: string | undefined, delta: number) => {
+        if (!accountId) return;
+        accountDeltas[accountId] = (accountDeltas[accountId] || 0) + delta;
+      };
+      if (tx.type === 'transfer') {
+        addAccountDelta(tx.account_id, tx.amount);
+        addAccountDelta(tx.to_account_id, -tx.amount);
+      } else {
+        addAccountDelta(tx.account_id, tx.type === 'income' ? -tx.amount : tx.amount);
       }
+      const currentAccounts = get().accounts;
+      const updatedAccounts = currentAccounts.map((account) => {
+        const delta = accountDeltas[account.id] || 0;
+        return delta === 0 ? account : { ...account, balance: account.balance + delta };
+      });
+      const changedAccounts = updatedAccounts.filter((account, index) => account !== currentAccounts[index]);
+      await Promise.all(changedAccounts.map((account) => storage.updateAccount(account, uid)));
+      if (changedAccounts.length > 0) set({ accounts: updatedAccounts });
     }
   },
 
