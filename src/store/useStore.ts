@@ -16,6 +16,34 @@ const createDefaultCashAccount = (userId?: string): Account => ({
   created_at: new Date().toISOString(),
 });
 
+// Multiple components can request data while authentication is finishing. Keep one
+// in-flight creation request per user, then recheck Supabase before creating Cash.
+// This prevents duplicate automatic Cash accounts from concurrent requests.
+const defaultCashCreationByUser = new Map<string, Promise<Account>>();
+
+async function ensureDefaultCashAccount(userId: string, knownAccounts: Account[]): Promise<Account> {
+  const existingCash = knownAccounts.find((account) => account.type === 'cash');
+  if (existingCash) return existingCash;
+
+  const inFlight = defaultCashCreationByUser.get(userId);
+  if (inFlight) return inFlight;
+
+  const creation = (async () => {
+    const latestAccounts = await storage.getAccounts(userId);
+    const persistedCash = latestAccounts.find((account) => account.type === 'cash');
+    if (persistedCash) return persistedCash;
+
+    return storage.addAccount(createDefaultCashAccount(userId), userId);
+  })();
+
+  defaultCashCreationByUser.set(userId, creation);
+  try {
+    return await creation;
+  } finally {
+    defaultCashCreationByUser.delete(userId);
+  }
+}
+
 interface AppState {
   // Auth
   userId: string | null;
@@ -138,11 +166,11 @@ export const useStore = create<AppState>((set, get) => ({
       storage.getInstallments(uid),
     ]);
     let accounts = rawAccounts;
-    const hasCashAccount = accounts.some(a => a.type === 'cash');
-    if (!hasCashAccount) {
-      const cashAccount = createDefaultCashAccount(uid);
-      const savedCash = await storage.addAccount(cashAccount, uid);
-      accounts = [savedCash, ...accounts];
+    if (!accounts.some((account) => account.type === 'cash')) {
+      const cashAccount = await ensureDefaultCashAccount(uid, accounts);
+      if (!accounts.some((account) => account.id === cashAccount.id)) {
+        accounts = [cashAccount, ...accounts];
+      }
     }
     set({ transactions, accounts, budgets, goals, debts, installments, isLoading: false });
   },
@@ -151,10 +179,12 @@ export const useStore = create<AppState>((set, get) => ({
     const uid = get().userId ?? '';
     let accountId = txData.account_id;
     if (!accountId) {
-      let cashAccount = get().accounts.find(a => a.type === 'cash');
+      let cashAccount = get().accounts.find((account) => account.type === 'cash');
       if (!cashAccount) {
-        cashAccount = await storage.addAccount(createDefaultCashAccount(uid), uid);
-        set(s => ({ accounts: [cashAccount!, ...s.accounts] }));
+        cashAccount = await ensureDefaultCashAccount(uid, get().accounts);
+        set((state) => state.accounts.some((account) => account.id === cashAccount!.id)
+          ? state
+          : { accounts: [cashAccount!, ...state.accounts] });
       }
       accountId = cashAccount.id;
     }
