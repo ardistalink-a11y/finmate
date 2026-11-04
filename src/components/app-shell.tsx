@@ -21,6 +21,8 @@ import {
   Globe,
   LogOut,
   Plus,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui";
@@ -57,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -74,6 +77,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const newLocale = locale === "id" ? "en" : "id";
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     router.push(newPath);
+  }
+
+  function closeMobile() {
+    setMobileOpen(false);
   }
 
   const groups: Record<NavItem["group"], NavItem[]> = {
@@ -115,6 +122,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b px-4 md:px-6">
           <div className="flex items-center gap-2 md:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Buka menu">
+              <Menu className="h-5 w-5" />
+            </Button>
             <div className="h-6 w-6 rounded-md bg-accent" />
             <span className="font-semibold">Finmate</span>
           </div>
@@ -134,6 +144,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         </header>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <button className="absolute inset-0 bg-black/40" aria-label="Tutup menu" onClick={closeMobile} />
+            <aside className="relative flex h-full w-[min(86vw,320px)] flex-col border-r bg-bg shadow-xl">
+              <div className="flex h-14 items-center justify-between border-b px-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-md bg-accent" />
+                  <span className="font-semibold">Finmate</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={closeMobile} aria-label="Tutup menu">
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <nav className="flex-1 space-y-6 overflow-y-auto p-3">
+                <NavGroup label={t("groupMain")} items={groups.main} locale={locale} pathname={pathname} t={t} onNavigate={closeMobile} />
+                <NavGroup label={t("groupPlanning")} items={groups.planning} locale={locale} pathname={pathname} t={t} onNavigate={closeMobile} />
+                <NavGroup label={t("groupTools")} items={groups.tools} locale={locale} pathname={pathname} t={t} onNavigate={closeMobile} />
+              </nav>
+              <div className="border-t p-3">
+                <Link href={`/${locale}/settings`} onClick={closeMobile} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted hover:bg-surface-2 hover:text-fg">
+                  <Settings className="h-4 w-4" />
+                  {t("settings")}
+                </Link>
+              </div>
+            </aside>
+          </div>
+        )}
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
@@ -146,12 +183,14 @@ function NavGroup({
   locale,
   pathname,
   t,
+  onNavigate,
 }: {
   label: string;
   items: NavItem[];
   locale: string;
   pathname: string;
   t: ReturnType<typeof useTranslations>;
+  onNavigate?: () => void;
 }) {
   return (
     <div>
@@ -163,8 +202,9 @@ function NavGroup({
           const Icon = item.icon;
           return (
             <li key={item.href}>
-              <Link
-                href={href}
+                <Link
+                  href={href}
+                  onClick={onNavigate}
                 className={cn(
                   "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
                   active
