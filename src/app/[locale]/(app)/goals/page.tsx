@@ -1,15 +1,4 @@
-import { getTranslations } from "next-intl/server";
-import { Card } from "@/components/ui";
-
-export default async function GoalsPage() {
-  const t = await getTranslations("comingSoon");
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-2xl font-semibold">Goals</h1>
-      <Card className="py-12 text-center">
-        <h2 className="text-base font-medium">{t("title")}</h2>
-        <p className="mt-1 text-sm text-muted">{t("description")}</p>
-      </Card>
-    </div>
-  );
-}
+import { createClient } from "@/lib/supabase/server";
+import { Card, Button, Input, Label } from "@/components/ui";
+import { createGoal } from "@/server/actions/planning";
+export default async function GoalsPage() { const s=await createClient(); const {data:{user}}=await s.auth.getUser(); const {data:goals}=await s.from("goals").select("*").eq("user_id",user!.id).order("created_at",{ascending:false}); return <div className="mx-auto max-w-6xl space-y-6"><h1 className="text-2xl font-semibold">Goals</h1><div className="grid gap-6 lg:grid-cols-[1fr_320px]"><Card>{(goals??[]).length===0?<p className="py-8 text-center text-sm text-muted">Belum ada target.</p>:<div className="space-y-3">{goals!.map(g=><div key={g.id} className="rounded-md border p-3"><div className="flex justify-between"><b>{g.name}</b><span>{Number(g.current_amount).toLocaleString("id-ID")} / {Number(g.target_amount).toLocaleString("id-ID")} {g.currency}</span></div><div className="mt-2 h-2 rounded bg-surface-2"><div className="h-2 rounded bg-accent" style={{width:`${Math.min(100,Number(g.current_amount)/Number(g.target_amount)*100)}%`}} /></div></div>)}</div>}</Card><Card><h2 className="mb-4 text-sm font-semibold">Tambah Target</h2><form action={createGoal} className="space-y-4"><div><Label htmlFor="name">Nama</Label><Input id="name" name="name" required /></div><div><Label htmlFor="target_amount">Target</Label><Input id="target_amount" name="target_amount" type="number" min="1" required /></div><div><Label htmlFor="target_date">Tanggal target</Label><Input id="target_date" name="target_date" type="date" /></div><Button type="submit" className="w-full">Simpan</Button></form></Card></div></div>; }

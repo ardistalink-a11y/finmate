@@ -1,15 +1,4 @@
-import { getTranslations } from "next-intl/server";
-import { Card } from "@/components/ui";
-
-export default async function DebtsPage() {
-  const t = await getTranslations("comingSoon");
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-2xl font-semibold">Debts</h1>
-      <Card className="py-12 text-center">
-        <h2 className="text-base font-medium">{t("title")}</h2>
-        <p className="mt-1 text-sm text-muted">{t("description")}</p>
-      </Card>
-    </div>
-  );
-}
+import { createClient } from "@/lib/supabase/server";
+import { Card, Button, Input, Label } from "@/components/ui";
+import { createDebt } from "@/server/actions/planning";
+export default async function DebtsPage() { const s=await createClient(); const {data:{user}}=await s.auth.getUser(); const {data:debts}=await s.from("debts").select("*").eq("user_id",user!.id).order("created_at",{ascending:false}); return <div className="mx-auto max-w-6xl space-y-6"><h1 className="text-2xl font-semibold">Debts</h1><div className="grid gap-6 lg:grid-cols-[1fr_320px]"><Card>{(debts??[]).length===0?<p className="py-8 text-center text-sm text-muted">Belum ada hutang.</p>:<div className="space-y-3">{debts!.map(d=><div key={d.id} className="flex justify-between rounded-md border p-3"><div><b>{d.name}</b><div className="text-xs text-muted">Bunga {d.interest_rate}%</div></div><span className="font-semibold">{Number(d.outstanding).toLocaleString("id-ID")} {d.currency}</span></div>)}</div>}</Card><Card><h2 className="mb-4 text-sm font-semibold">Tambah Hutang</h2><form action={createDebt} className="space-y-4"><div><Label htmlFor="name">Nama</Label><Input id="name" name="name" required /></div><div><Label htmlFor="principal">Pokok</Label><Input id="principal" name="principal" type="number" min="0" required /></div><div><Label htmlFor="interest_rate">Bunga %</Label><Input id="interest_rate" name="interest_rate" type="number" min="0" step="0.01" defaultValue="0" /></div><Button type="submit" className="w-full">Simpan</Button></form></Card></div></div>; }

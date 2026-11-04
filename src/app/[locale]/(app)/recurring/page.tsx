@@ -1,15 +1,4 @@
-import { getTranslations } from "next-intl/server";
-import { Card } from "@/components/ui";
-
-export default async function RecurringPage() {
-  const t = await getTranslations("comingSoon");
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-2xl font-semibold">Recurring</h1>
-      <Card className="py-12 text-center">
-        <h2 className="text-base font-medium">{t("title")}</h2>
-        <p className="mt-1 text-sm text-muted">{t("description")}</p>
-      </Card>
-    </div>
-  );
-}
+import { createClient } from "@/lib/supabase/server";
+import { Card, Button, Input, Label } from "@/components/ui";
+import { createRecurring } from "@/server/actions/planning";
+export default async function RecurringPage() { const s=await createClient(); const {data:{user}}=await s.auth.getUser(); const [{data:rows},{data:accounts}]=await Promise.all([s.from("recurring_transactions").select("*").eq("user_id",user!.id).order("next_run"),s.from("accounts").select("id,name").eq("user_id",user!.id).eq("is_archived",false)]); return <div className="mx-auto max-w-6xl space-y-6"><h1 className="text-2xl font-semibold">Recurring</h1><div className="grid gap-6 lg:grid-cols-[1fr_320px]"><Card>{(rows??[]).length===0?<p className="py-8 text-center text-sm text-muted">Belum ada transaksi berulang.</p>:<div className="space-y-3">{rows!.map(r=><div key={r.id} className="flex justify-between rounded-md border p-3"><div><b>{r.note||r.type}</b><div className="text-xs text-muted">{r.frequency} · berikutnya {r.next_run}</div></div><span>{Number(r.amount).toLocaleString("id-ID")}</span></div>)}</div>}</Card><Card><h2 className="mb-4 text-sm font-semibold">Tambah Recurring</h2><form action={createRecurring} className="space-y-4"><div><Label htmlFor="account_id">Dompet</Label><select id="account_id" name="account_id" className="input" required>{(accounts??[]).map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div><div><Label htmlFor="type">Jenis</Label><select id="type" name="type" className="input"><option value="expense">Pengeluaran</option><option value="income">Pemasukan</option></select></div><div><Label htmlFor="amount">Jumlah</Label><Input id="amount" name="amount" type="number" min="0.01" required /></div><div><Label htmlFor="note">Catatan</Label><Input id="note" name="note" /></div><div><Label htmlFor="frequency">Frekuensi</Label><select id="frequency" name="frequency" className="input"><option value="monthly">Bulanan</option><option value="weekly">Mingguan</option><option value="yearly">Tahunan</option></select></div><div><Label htmlFor="next_run">Tanggal berikutnya</Label><Input id="next_run" name="next_run" type="date" required /></div><Button type="submit" className="w-full">Simpan</Button></form></Card></div></div>; }
