@@ -3,33 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-async function userClient() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user ? { supabase, user } : null;
-}
+async function ctx() { const supabase = await createClient(); const { data: { user } } = await supabase.auth.getUser(); return user ? { supabase, user } : null; }
+async function idOf(formData: FormData) { return String(formData.get("id") || ""); }
 
-export async function createBudget(formData: FormData): Promise<void> {
-  const ctx = await userClient(); if (!ctx) return;
-  await ctx.supabase.from("budgets").insert({ user_id: ctx.user.id, name: String(formData.get("name") || "Budget"), amount: Number(formData.get("amount") || 0), currency: String(formData.get("currency") || "IDR"), period: String(formData.get("period") || "monthly"), start_date: String(formData.get("start_date") || new Date().toISOString().slice(0, 10)) });
-  revalidatePath("/", "layout");
-}
+export async function createBudget(f: FormData): Promise<void> { const c=await ctx(); if(!c)return; await c.supabase.from("budgets").insert({user_id:c.user.id,name:String(f.get("name")||"Budget"),amount:Number(f.get("amount")||0),currency:String(f.get("currency")||"IDR"),period:String(f.get("period")||"monthly"),start_date:String(f.get("start_date")||new Date().toISOString().slice(0,10))}); revalidatePath("/", "layout"); }
+export async function updateBudget(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("budgets").update({name:String(f.get("name")||"Budget"),amount:Number(f.get("amount")||0),period:String(f.get("period")||"monthly"),is_active:f.get("is_active")!=="false"}).eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
+export async function deleteBudget(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("budgets").delete().eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
 
-export async function createGoal(formData: FormData): Promise<void> {
-  const ctx = await userClient(); if (!ctx) return;
-  await ctx.supabase.from("goals").insert({ user_id: ctx.user.id, name: String(formData.get("name") || "Goal"), target_amount: Number(formData.get("target_amount") || 0), currency: String(formData.get("currency") || "IDR"), target_date: String(formData.get("target_date") || "") || null });
-  revalidatePath("/", "layout");
-}
+export async function createGoal(f: FormData): Promise<void> { const c=await ctx(); if(!c)return; await c.supabase.from("goals").insert({user_id:c.user.id,name:String(f.get("name")||"Goal"),target_amount:Number(f.get("target_amount")||0),currency:String(f.get("currency")||"IDR"),target_date:String(f.get("target_date")||"")||null}); revalidatePath("/", "layout"); }
+export async function updateGoal(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; const target=Number(f.get("target_amount")||0); const current=Number(f.get("current_amount")||0); await c.supabase.from("goals").update({name:String(f.get("name")||"Goal"),target_amount:target,current_amount:current,is_completed:current>=target,target_date:String(f.get("target_date")||"")||null}).eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
+export async function deleteGoal(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("goals").delete().eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
 
-export async function createDebt(formData: FormData): Promise<void> {
-  const ctx = await userClient(); if (!ctx) return;
-  const principal = Number(formData.get("principal") || 0);
-  await ctx.supabase.from("debts").insert({ user_id: ctx.user.id, name: String(formData.get("name") || "Debt"), principal, outstanding: principal, interest_rate: Number(formData.get("interest_rate") || 0), currency: String(formData.get("currency") || "IDR"), due_date: String(formData.get("due_date") || "") || null });
-  revalidatePath("/", "layout");
-}
+export async function createDebt(f: FormData): Promise<void> { const c=await ctx(); if(!c)return; const principal=Number(f.get("principal")||0); await c.supabase.from("debts").insert({user_id:c.user.id,name:String(f.get("name")||"Debt"),principal,outstanding:principal,interest_rate:Number(f.get("interest_rate")||0),currency:String(f.get("currency")||"IDR"),due_date:String(f.get("due_date")||"")||null}); revalidatePath("/", "layout"); }
+export async function updateDebt(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("debts").update({name:String(f.get("name")||"Debt"),outstanding:Number(f.get("outstanding")||0),interest_rate:Number(f.get("interest_rate")||0),due_date:String(f.get("due_date")||"")||null}).eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
+export async function deleteDebt(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("debts").delete().eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
 
-export async function createRecurring(formData: FormData): Promise<void> {
-  const ctx = await userClient(); if (!ctx) return;
-  await ctx.supabase.from("recurring_transactions").insert({ user_id: ctx.user.id, account_id: String(formData.get("account_id")), category_id: String(formData.get("category_id") || "") || null, type: String(formData.get("type") || "expense"), amount: Number(formData.get("amount") || 0), note: String(formData.get("note") || "") || null, frequency: String(formData.get("frequency") || "monthly"), next_run: String(formData.get("next_run") || new Date().toISOString().slice(0, 10)) });
-  revalidatePath("/", "layout");
-}
+export async function createRecurring(f: FormData): Promise<void> { const c=await ctx(); if(!c)return; await c.supabase.from("recurring_transactions").insert({user_id:c.user.id,account_id:String(f.get("account_id")),category_id:String(f.get("category_id")||"")||null,type:String(f.get("type")||"expense"),amount:Number(f.get("amount")||0),note:String(f.get("note")||"")||null,frequency:String(f.get("frequency")||"monthly"),next_run:String(f.get("next_run")||new Date().toISOString().slice(0,10))}); revalidatePath("/", "layout"); }
+export async function updateRecurring(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("recurring_transactions").update({amount:Number(f.get("amount")||0),note:String(f.get("note")||"")||null,frequency:String(f.get("frequency")||"monthly"),next_run:String(f.get("next_run")||new Date().toISOString().slice(0,10)),is_active:f.get("is_active")!=="false"}).eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
+export async function deleteRecurring(f: FormData): Promise<void> { const c=await ctx(); const id=await idOf(f); if(!c||!id)return; await c.supabase.from("recurring_transactions").delete().eq("id",id).eq("user_id",c.user.id); revalidatePath("/", "layout"); }
