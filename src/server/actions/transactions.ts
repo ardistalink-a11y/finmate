@@ -4,17 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { transactionSchema } from "@/lib/validations";
 
-/**
- * Create a transaction. Handles currency snapshotting:
- *   - Reads account.currency
- *   - Reads profile.base_currency
- *   - Reads latest fx_rate for (account.currency → base)
- *   - Stores fx_rate and amount_base snapshot
- */
-export async function createTransaction(formData: FormData) {
+export async function createTransaction(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  if (!user) return;
 
   const parsed = transactionSchema.safeParse({
     account_id: formData.get("account_id"),
@@ -25,41 +18,22 @@ export async function createTransaction(formData: FormData) {
     note: formData.get("note") || undefined,
     merchant: formData.get("merchant") || undefined,
   });
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  }
+  if (!parsed.success) return;
 
-  // Fetch account + profile for currency resolution
   const [{ data: account }, { data: profile }] = await Promise.all([
-    supabase.from("accounts").select("currency").eq("id", parsed.data.account_id).single(),
+    supabase.from("accounts").select("currency").eq("id", parsed.data.account_id).eq("user_id", user.id).single(),
     supabase.from("profiles").select("base_currency").eq("id", user.id).single(),
   ]);
-
-  if (!account) return { error: "Account not found" };
+  if (!account) return;
   const base = profile?.base_currency ?? "IDR";
   const accountCurrency = account.currency;
-
   let fxRate = 1;
   if (accountCurrency !== base) {
-    const { data: rate } = await supabase
-      .from("fx_rates")
-      .select("rate")
-      .eq("base", accountCurrency)
-      .eq("quote", base)
-      .order("fetched_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (!rate) {
-      return { error: `No FX rate available for ${accountCurrency}→${base}. Please sync rates in Settings.` };
-    }
+    const { data: rate } = await supabase.from("fx_rates").select("rate").eq("base", accountCurrency).eq("quote", base).order("fetched_at", { ascending: false }).limit(1).maybeSingle();
+    if (!rate) return;
     fxRate = Number(rate.rate);
   }
-
-  const signedAmount =
-    parsed.data.type === "expense" ? -Math.abs(parsed.data.amount) : Math.abs(parsed.data.amount);
-  const amountBase = signedAmount * fxRate;
-
+  const signedAmount = parsed.data.type === "expense" ? -Math.abs(parsed.data.amount) : Math.abs(parsed.data.amount);
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,
     account_id: parsed.data.account_id,
@@ -68,23 +42,26 @@ export async function createTransaction(formData: FormData) {
     amount: signedAmount,
     currency: accountCurrency,
     fx_rate: fxRate,
-    amount_base: amountBase,
+    amount_base: signedAmount * fxRate,
     date: parsed.data.date,
     note: parsed.data.note,
     merchant: parsed.data.merchant,
     source: "manual",
   });
-
-  if (error) return { error: error.message };
-
+  if (error) return;
   revalidatePath("/", "layout");
-  return { success: true };
 }
 
-export async function deleteTransaction(id: string) {
+export async function deleteTransaction(id: string): Promise<void> {
   const supabase = await createClient();
-  const { error } = await supabase.from("transactions").delete().eq("id", id);
-  if (error) return { error: error.message };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return;
   revalidatePath("/", "layout");
-  return { success: true };
+}
+
+export async function deleteTransactionFromForm(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+  if (id) await deleteTransaction(id);
 }

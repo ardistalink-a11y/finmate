@@ -1,21 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/currency";
-import { Card } from "@/components/ui";
+import { Card, Button, Input, Label } from "@/components/ui";
+import { createAccount, archiveAccountFromForm } from "@/server/actions/accounts";
 
 export default async function AccountsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations("accounts");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   const [{ data: accounts }, { data: profile }] = await Promise.all([
-    supabase.from("accounts").select("*").eq("user_id", user!.id).eq("is_archived", false),
+    supabase.from("accounts").select("*").eq("user_id", user!.id).eq("is_archived", false).order("created_at"),
     supabase.from("profiles").select("base_currency").eq("id", user!.id).single(),
   ]);
-
   const base = profile?.base_currency ?? "IDR";
-
   const total = (accounts ?? []).reduce((s, a) => s + Number(a.opening_balance), 0);
 
   return (
@@ -24,36 +22,46 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
         <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted">{t("subtitle")}</p>
       </div>
-
-      <Card>
-        <div className="text-xs font-medium text-muted">{t("total", { currency: base })}</div>
-        <div className="mt-1 num text-2xl font-semibold">{formatMoney(total, base, locale)}</div>
-      </Card>
-
-      {(accounts ?? []).length === 0 ? (
-        <Card className="border-dashed">
-          <p className="py-8 text-center text-sm text-muted">
-            {t("addAccount")} — {t("subtitle")}
-          </p>
-        </Card>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(accounts ?? []).map((a) => (
-            <Card key={a.id}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-medium">{a.name}</div>
-                  <div className="mt-0.5 text-xs text-muted capitalize">{t(`types.${a.type}`)}</div>
-                </div>
-                <div className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">{a.currency}</div>
-              </div>
-              <div className="mt-4 num text-xl font-semibold">
-                {formatMoney(Number(a.opening_balance), a.currency, locale)}
-              </div>
-            </Card>
-          ))}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <Card>
+            <div className="text-xs font-medium text-muted">{t("total", { currency: base })}</div>
+            <div className="mt-1 num text-2xl font-semibold">{formatMoney(total, base, locale)}</div>
+          </Card>
+          {(accounts ?? []).length === 0 ? (
+            <Card className="border-dashed"><p className="py-8 text-center text-sm text-muted">{t("addAccount")}</p></Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {(accounts ?? []).map((a) => (
+                <Card key={a.id}>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium">{a.name}</div>
+                      <div className="mt-0.5 text-xs text-muted capitalize">{t(`types.${a.type}`)}</div>
+                    </div>
+                    <div className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">{a.currency}</div>
+                  </div>
+                  <div className="mt-4 num text-xl font-semibold">{formatMoney(Number(a.opening_balance), a.currency, locale)}</div>
+                  <form action={archiveAccountFromForm} className="mt-4 text-right">
+                    <input type="hidden" name="id" value={a.id} />
+                    <Button type="submit" variant="ghost" size="sm">Arsipkan</Button>
+                  </form>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        <Card>
+          <h2 className="mb-4 text-sm font-semibold">{t("addAccount")}</h2>
+          <form action={createAccount} className="space-y-4">
+            <div><Label htmlFor="name">{t("name")}</Label><Input id="name" name="name" required maxLength={60} /></div>
+            <div><Label htmlFor="type">{t("type")}</Label><select id="type" name="type" className="input" defaultValue="bank"><option value="bank">{t("types.bank")}</option><option value="ewallet">{t("types.ewallet")}</option><option value="cash">{t("types.cash")}</option><option value="credit_card">{t("types.credit_card")}</option><option value="investment">{t("types.investment")}</option><option value="loan">{t("types.loan")}</option></select></div>
+            <div><Label htmlFor="currency">{t("currency")}</Label><select id="currency" name="currency" className="input" defaultValue="IDR"><option>IDR</option><option>USD</option><option>SGD</option><option>EUR</option><option>MYR</option></select></div>
+            <div><Label htmlFor="opening_balance">{t("openingBalance")}</Label><Input id="opening_balance" name="opening_balance" type="number" step="0.01" defaultValue="0" /></div>
+            <Button type="submit" className="w-full">{t("addAccount")}</Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
