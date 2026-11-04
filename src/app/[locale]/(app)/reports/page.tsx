@@ -1,15 +1,3 @@
-import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui";
-
-export default async function ReportsPage() {
-  const t = await getTranslations("comingSoon");
-  return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <h1 className="text-2xl font-semibold">Reports</h1>
-      <Card className="py-12 text-center">
-        <h2 className="text-base font-medium">{t("title")}</h2>
-        <p className="mt-1 text-sm text-muted">{t("description")}</p>
-      </Card>
-    </div>
-  );
-}
+export default async function ReportsPage() { const s=await createClient(); const {data:{user}}=await s.auth.getUser(); const {data:txs}=await s.from("transactions").select("type,amount_base,date").eq("user_id",user!.id).order("date",{ascending:false}).limit(500); const income=(txs??[]).filter(x=>x.type==='income').reduce((n,x)=>n+Number(x.amount_base),0); const expense=(txs??[]).filter(x=>x.type==='expense').reduce((n,x)=>n+Math.abs(Number(x.amount_base)),0); return <div className="mx-auto max-w-6xl space-y-6"><h1 className="text-2xl font-semibold">Reports</h1><p className="text-sm text-muted">Ringkasan berdasarkan transaksi yang sudah dicatat.</p><div className="grid gap-4 sm:grid-cols-3"><Card><div className="text-xs text-muted">Pemasukan</div><div className="mt-2 text-2xl font-semibold text-income">{income.toLocaleString("id-ID")}</div></Card><Card><div className="text-xs text-muted">Pengeluaran</div><div className="mt-2 text-2xl font-semibold text-expense">{expense.toLocaleString("id-ID")}</div></Card><Card><div className="text-xs text-muted">Net cashflow</div><div className="mt-2 text-2xl font-semibold">{(income-expense).toLocaleString("id-ID")}</div></Card></div></div>; }
