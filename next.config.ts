@@ -4,7 +4,7 @@ import type { NextConfig } from "next";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const config: NextConfig = {
-  experimental: { typedRoutes: false },
+  typedRoutes: false,
 };
 
 export default withNextIntl(config);
