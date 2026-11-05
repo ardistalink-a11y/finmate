@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/currency";
+import { fetchAllUserTransactions } from "@/server/queries/transactions";
 import { cashflow, byCategory } from "@/lib/finance/aggregates";
 import { Card } from "@/components/ui";
 import Link from "next/link";
@@ -38,7 +39,7 @@ export default async function DashboardPage({
     );
   }
   for (const transaction of txs) {
-    if (transaction.type === "transfer" || !activeAccountIds.has(transaction.account_id)) continue;
+    if (!activeAccountIds.has(transaction.account_id)) continue;
     netWorthByCurrency.set(
       transaction.currency,
       (netWorthByCurrency.get(transaction.currency) ?? 0) + Number(transaction.amount)
