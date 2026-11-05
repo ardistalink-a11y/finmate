@@ -1,124 +1,64 @@
 # Finmate
 
-Personal finance SaaS — multi-wallet, multi-currency, bilingual (ID/EN), light & dark mode.
+Finmate is a bilingual personal-finance web app with multiple accounts and currencies.
 
 ## Stack
 
-- Next.js 15 (App Router) + TypeScript
-- Supabase (Postgres + Auth + Storage + RLS)
-- Tailwind CSS + Radix primitives
-- next-intl (i18n) + next-themes (dark mode)
-- Recharts (charts), TanStack Query, React Hook Form + Zod
+- Next.js 15 App Router and TypeScript
+- Supabase Auth and Postgres with row-level security
+- Tailwind CSS, Radix UI, and next-intl
+- Recharts for charts
 
-## Setup
+## Local setup
 
-### 1. Install
+1. Install dependencies:
 
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
-### 2. Supabase
+2. Create `.env.local` from `.env.example` and fill in your Supabase project values:
 
-Create a project at https://supabase.com, then apply migrations:
+   ```bash
+   cp .env.example .env.local
+   ```
 
-```
-# Copy .env.example → .env.local and fill values
-cp .env.example .env.local
+   Keep `SUPABASE_SERVICE_ROLE_KEY` on the server. Never expose it through a `NEXT_PUBLIC_*` variable or client code.
 
-# In Supabase SQL editor, run:
-#   supabase/migrations/0001_init.sql
-#   supabase/migrations/0002_seed.sql
-```
+3. Apply the database migrations to a linked Supabase project:
 
-Or use Supabase CLI:
+   ```bash
+   supabase link --project-ref <project-ref>
+   supabase db push --remote
+   ```
 
-```
-supabase link --project-ref <your-ref>
-supabase db push
-```
+   The core schema is in `supabase/migrations/20261104065059_create_finmate_core_schema.sql`; the next migration tightens RLS policies, function permissions, and foreign-key indexes.
 
-### 3. Google OAuth (optional)
+4. Start the development server:
 
-Supabase Dashboard → Authentication → Providers → Google.
-Set `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED=true` to show the button.
+   ```bash
+   npm run dev
+   ```
 
-### 4. Run
+   Open http://localhost:3000. The app uses `/id` by default and also supports `/en`.
 
-```
-npm run dev
-```
+## Supabase configuration
 
-Open http://localhost:3000 — you'll be redirected to `/id/login`.
+Google sign-in is optional. Configure the Google provider in Supabase Dashboard → Authentication → Providers, then set `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED=true`.
 
-## Project structure
+The example environment file also documents optional AI, email, WhatsApp, and cron settings. Configure only the providers used by your deployment.
 
-```
-src/
-├── app/
-│   ├── [locale]/
-│   │   ├── (auth)/       login, register, forgot-password
-│   │   ├── (app)/        dashboard, transactions, accounts, budgets,
-│   │   │                 recurring, goals, debts, reports, import,
-│   │   │                 advisor, settings
-│   │   └── auth/callback/  OAuth code exchange
-│   └── api/cron/         fx-rates, recurring, reminders
-├── components/           app-shell, sidebar, theme & locale switchers, ui/
-├── i18n/                 routing, request config
-├── lib/
-│   ├── supabase/         client, server, middleware helpers
-│   ├── currency/         format, convert, FX fetch
-│   ├── finance/          amortization, forecast, aggregates (pure, tested)
-│   ├── import/           parse, normalize, dedupe, categorize
-│   ├── ai/               provider interface, mock, tools
-│   ├── notifications/    channel abstraction (email + WA stub)
-│   └── validations/      Zod schemas
-└── server/actions/       auth, accounts, transactions
-messages/
-├── id.json
-└── en.json
-supabase/migrations/
-├── 0001_init.sql         all tables + RLS + triggers
-└── 0002_seed.sql         currencies, system categories
-tests/
-├── finance.test.ts
-└── import.test.ts
-```
+## Money and currencies
 
-## Roadmap status
+Transactions store `amount` in the account currency and `fx_rate` as the conversion snapshot. `amount_base` stores the converted value in the user's base currency so historical reports do not change when rates move.
 
-- **P0 — Foundation** ✅ complete: auth, i18n, dark mode, layout, design system
-- **P1 — Wallets & Transactions** ✅ complete: CRUD, multi-currency snapshots
-- **P2–P7** — scaffolding only (pages render, logic in `lib/` ready)
+## Project scripts
 
-See `docs/blueprint.md` for the full plan.
-
-## Multi-currency model
-
-Every transaction stores:
-
-- `amount` in the **account's currency**
-- `fx_rate` snapshot at transaction time
-- `amount_base` = `amount × fx_rate` in the **profile's base currency**
-
-Reports and budgets always aggregate `amount_base` → numbers never change retroactively.
+- `npm run dev`: development server
+- `npm run build`: production build
+- `npm run start`: serve a production build
+- `npm run lint`: lint
 
 ## License
 
 MIT
-
-</BDS:create_file>
-
-<BDS:create_file fileName="finmate/src/i18n/routing.ts">
-
-```typescript
-import { defineRouting } from "next-intl/routing";
-
-export const routing = defineRouting({
-  locales: ["id", "en"],
-  defaultLocale: "id",
-  localePrefix: "always",
-});
-
-export type Locale = (typeof routing.locales)[number];
-
