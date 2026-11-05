@@ -9,7 +9,7 @@ export async function fetchAllUserTransactions(
 ) {
   const pageSize = 1000;
   let offset = 0;
-  const transactions: Array<Record<string, unknown>> = [];
+  const transactions: Array<any> = [];
 
   while (true) {
     const { data, error } = await supabase
@@ -21,7 +21,7 @@ export async function fetchAllUserTransactions(
       .range(offset, offset + pageSize - 1);
 
     if (error) throw new Error(`Unable to load transactions: ${error.message}`);
-    const page = (data ?? []) as Array<Record<string, unknown>>;
+    const page = (data ?? []) as Array<any>;
     transactions.push(...page);
     if (page.length < pageSize) break;
     offset += pageSize;
