@@ -18,22 +18,32 @@ export default async function DashboardPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: profile }, { data: accounts }, { data: txs }, { data: categories }] = await Promise.all([
+  const [{ data: profile }, { data: accounts }, { data: categories }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("accounts").select("*").eq("user_id", user.id).eq("is_archived", false),
-    supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(100),
     supabase.from("categories").select("*"),
   ]);
+  const txs = await fetchAllUserTransactions(supabase, user.id);
 
   const baseCurrency = profile?.base_currency ?? "IDR";
   const name = profile?.full_name?.split(" ")[0] ?? "there";
 
-  // Net worth = sum(opening_balance + sum(amount_base))
-  let netWorth = 0;
-  for (const a of accounts ?? []) {
-    netWorth += Number(a.opening_balance);
+  // Keep balances grouped by currency because opening balances have no FX snapshot.
+  const netWorthByCurrency = new Map<string, number>();
+  const activeAccountIds = new Set((accounts ?? []).map((account) => account.id));
+  for (const account of accounts ?? []) {
+    netWorthByCurrency.set(
+      account.currency,
+      (netWorthByCurrency.get(account.currency) ?? 0) + Number(account.opening_balance)
+    );
   }
-  netWorth += (txs ?? []).filter((x) => x.type !== "transfer").reduce((s, x) => s + Number(x.amount_base), 0);
+  for (const transaction of txs) {
+    if (transaction.type === "transfer" || !activeAccountIds.has(transaction.account_id)) continue;
+    netWorthByCurrency.set(
+      transaction.currency,
+      (netWorthByCurrency.get(transaction.currency) ?? 0) + Number(transaction.amount)
+    );
+  }
 
   const monthPrefix = new Date().toISOString().slice(0, 7);
   const thisMonth = (txs ?? []).filter((x) => x.date.startsWith(monthPrefix));
@@ -90,9 +100,21 @@ export default async function DashboardPage({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
-          <div className="text-xs font-medium text-muted">{t("netWorth")}</div>
-          <div className="mt-2 num text-2xl font-semibold">
-            {formatMoney(netWorth, baseCurrency, locale)}
+          <div className="text-xs font-medium text-muted">
+            {locale === "id" ? "Saldo bersih per mata uang" : "Net worth by currency"}
+          </div>
+          <div className="mt-2 space-y-1">
+            {netWorthByCurrency.size === 0 ? (
+              <div className="num text-2xl font-semibold">{formatMoney(0, baseCurrency, locale)}</div>
+            ) : (
+              Array.from(netWorthByCurrency.entries())
+                .sort(([currencyA], [currencyB]) => currencyA.localeCompare(currencyB))
+                .map(([currency, amount]) => (
+                  <div key={currency} className="num text-lg font-semibold">
+                    {formatMoney(amount, currency, locale)}
+                  </div>
+                ))
+            )}
           </div>
         </Card>
         <Card>
