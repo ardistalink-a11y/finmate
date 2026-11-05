@@ -21,7 +21,7 @@ export function sumByType(txs: TxRow[], type: TxRow["type"]): number {
 
 export function cashflow(txs: TxRow[]): { income: number; expense: number; net: number } {
   const income = sumByType(txs, "income");
-  const expense = sumByType(txs, "expense");
+  const expense = round2(Math.abs(sumByType(txs, "expense")));
   return { income, expense, net: round2(income - expense) };
 }
 
@@ -31,7 +31,7 @@ export function byCategory(txs: TxRow[], type: "income" | "expense"): CategoryAg
   for (const t of txs) {
     if (t.type !== type) continue;
     const current = map.get(t.category_id) ?? { total: 0, count: 0 };
-    current.total += t.amount_base;
+    current.total += type === "expense" ? Math.abs(t.amount_base) : t.amount_base;
     current.count += 1;
     map.set(t.category_id, current);
   }
@@ -58,7 +58,7 @@ export function monthlyTrend(
     const key = t.date.slice(0, 7);
     if (!buckets[key]) continue;
     if (t.type === "income") buckets[key].income += t.amount_base;
-    if (t.type === "expense") buckets[key].expense += t.amount_base;
+    if (t.type === "expense") buckets[key].expense += Math.abs(t.amount_base);
   }
 
   return Object.entries(buckets).map(([month, v]) => ({
