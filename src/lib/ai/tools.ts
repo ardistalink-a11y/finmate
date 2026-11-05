@@ -117,7 +117,7 @@ export async function getNetWorth(ctx: ToolContext): Promise<number> {
   }
   const activeAccountIds = new Set((accounts ?? []).map((account) => account.id));
   for (const transaction of transactions ?? []) {
-    if (transaction.type !== "transfer" && activeAccountIds.has(transaction.account_id)) {
+    if (activeAccountIds.has(transaction.account_id)) {
       total += Number(transaction.amount_base);
     }
   }
