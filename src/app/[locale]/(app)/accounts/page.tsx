@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/currency";
+import { fetchAllUserTransactions } from "@/server/queries/transactions";
 import { Card, Button, Input, Label } from "@/components/ui";
 import { createAccount, archiveAccountFromForm } from "@/server/actions/accounts";
 
@@ -13,8 +14,23 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
     supabase.from("accounts").select("*").eq("user_id", user!.id).eq("is_archived", false).order("created_at"),
     supabase.from("profiles").select("base_currency").eq("id", user!.id).single(),
   ]);
-  const base = profile?.base_currency ?? "IDR";
-  const total = (accounts ?? []).reduce((s, a) => s + Number(a.opening_balance), 0);
+  const transactions = await fetchAllUserTransactions(supabase, user!.id, "account_id,amount");
+  const balancesByAccount = new Map((accounts ?? []).map((account) => [account.id, Number(account.opening_balance)]));
+  for (const transaction of transactions) {
+    if (balancesByAccount.has(transaction.account_id)) {
+      balancesByAccount.set(
+        transaction.account_id,
+        (balancesByAccount.get(transaction.account_id) ?? 0) + Number(transaction.amount)
+      );
+    }
+  }
+  const totalsByCurrency = new Map<string, number>();
+  for (const account of accounts ?? []) {
+    totalsByCurrency.set(
+      account.currency,
+      (totalsByCurrency.get(account.currency) ?? 0) + (balancesByAccount.get(account.id) ?? 0)
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -25,8 +41,8 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card>
-            <div className="text-xs font-medium text-muted">{t("total", { currency: base })}</div>
-            <div className="mt-1 num text-2xl font-semibold">{formatMoney(total, base, locale)}</div>
+            <div className="text-xs font-medium text-muted">{locale === "id" ? "Total per mata uang" : "Totals by currency"}</div>
+            <div className="mt-1 space-y-1">{Array.from(totalsByCurrency.entries()).map(([currency, amount]) => <div key={currency} className="num text-xl font-semibold">{formatMoney(amount, currency, locale)}</div>)}</div>
           </Card>
           {(accounts ?? []).length === 0 ? (
             <Card className="border-dashed"><p className="py-8 text-center text-sm text-muted">{t("addAccount")}</p></Card>
@@ -41,7 +57,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
                     </div>
                     <div className="rounded-md bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">{a.currency}</div>
                   </div>
-                  <div className="mt-4 num text-xl font-semibold">{formatMoney(Number(a.opening_balance), a.currency, locale)}</div>
+                  <div className="mt-4 num text-xl font-semibold">{formatMoney(balancesByAccount.get(a.id) ?? 0, a.currency, locale)}</div>
                   <form action={archiveAccountFromForm} className="mt-4 text-right">
                     <input type="hidden" name="id" value={a.id} />
                     <Button type="submit" variant="ghost" size="sm">Arsipkan</Button>

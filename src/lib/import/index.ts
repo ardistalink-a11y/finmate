@@ -166,18 +166,28 @@ function parseDate(input: string, format: "auto" | "DMY" | "MDY" | "YMD"): strin
 
 function parseNumeric(v: unknown): number {
   if (v === null || v === undefined) return 0;
-  if (typeof v === "number") return v;
-  const s = String(v).replace(/[^\d.,-]/g, "").trim();
-  if (!s) return 0;
-  const lastDot = s.lastIndexOf(".");
-  const lastComma = s.lastIndexOf(",");
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+  const value = String(v).replace(/[^\d.,-]/g, "").trim();
+  if (!value) return 0;
+
+  const lastDot = value.lastIndexOf(".");
+  const lastComma = value.lastIndexOf(",");
+  let normalized = value;
+
   if (lastDot > -1 && lastComma > -1) {
-    return parseFloat(s.split(",").join("").replace(",", ""));
+    // The last separator is the decimal mark; the other one groups thousands.
+    normalized = lastDot > lastComma
+      ? value.replace(/,/g, "")
+      : value.replace(/\./g, "").replace(",", ".");
+  } else if (lastComma > -1) {
+    normalized = value.length - lastComma <= 3
+      ? value.replace(",", ".")
+      : value.replace(/,/g, "");
   }
-  if (lastComma > -1 && s.length - lastComma <= 3) {
-    return parseFloat(s.replace(",", "."));
-  }
-  return parseFloat(s.split(",").join("")) || 0;
+
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : 0;
 }
 
 function hashRow(date: string, amount: number, description: string, merchant?: string): string {
