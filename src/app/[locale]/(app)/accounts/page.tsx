@@ -14,7 +14,10 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
     supabase.from("profiles").select("base_currency").eq("id", user!.id).single(),
   ]);
   const base = profile?.base_currency ?? "IDR";
-  const total = (accounts ?? []).reduce((s, a) => s + Number(a.opening_balance), 0);
+  const totalsByCurrency = new Map<string, number>();
+  for (const account of accounts ?? []) {
+    totalsByCurrency.set(account.currency, (totalsByCurrency.get(account.currency) ?? 0) + Number(account.opening_balance));
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -25,8 +28,8 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card>
-            <div className="text-xs font-medium text-muted">{t("total", { currency: base })}</div>
-            <div className="mt-1 num text-2xl font-semibold">{formatMoney(total, base, locale)}</div>
+            <div className="text-xs font-medium text-muted">{locale === "id" ? "Total per mata uang" : "Totals by currency"}</div>
+            <div className="mt-1 space-y-1">{Array.from(totalsByCurrency.entries()).map(([currency, amount]) => <div key={currency} className="num text-xl font-semibold">{formatMoney(amount, currency, locale)}</div>)}</div>
           </Card>
           {(accounts ?? []).length === 0 ? (
             <Card className="border-dashed"><p className="py-8 text-center text-sm text-muted">{t("addAccount")}</p></Card>
