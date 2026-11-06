@@ -315,9 +315,9 @@ export default async function ReportsPage({
     : t("comparisonUnavailable");
 
   const categories = categoriesResult.data ?? [];
-  const accounts = accountsResult.data ?? [];
+  const accountOptions = accountsResult.data ?? [];
   const categoryMap = new Map(categories.map((category) => [category.id, category.name]));
-  const accountMap = new Map(accounts.map((account) => [account.id, account.name]));
+  const accountMap = new Map(accountOptions.map((account) => [account.id, account.name]));
 
   const aggregateBy = (kind: "income" | "expense") => {
     const groups = new Map<string, { name: string; total: number; count: number }>();
