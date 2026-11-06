@@ -153,6 +153,7 @@ export default async function DashboardPage({
           currency={baseCurrency}
           incomeLabel={t("income")}
           expenseLabel={t("expense")}
+          monthRangeLabel={t("slideToViewMonths")}
         />
       </Card>
 
