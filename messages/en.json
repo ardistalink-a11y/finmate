@@ -41,7 +41,19 @@
     "invalidCredentials": "Invalid email or password",
     "registerSuccess": "Account created, please check your email for verification",
     "resetSent": "Reset link has been sent to your email",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "forgotPasswordDescription": "Enter your account email. If it is registered, we'll send a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "backToLogin": "Back to sign in",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "recoverySessionInvalid": "The reset session is invalid or expired. Request a new reset link.",
+    "updatePasswordTitle": "Set a new password",
+    "updatePasswordDescription": "Use a password with at least 8 characters.",
+    "updatePassword": "Save new password",
+    "passwordUpdated": "Password updated successfully",
+    "requestAnotherReset": "Request a new reset link"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -102,7 +114,11 @@
     "type": "Type",
     "amount": "Amount",
     "note": "Note",
-    "types": { "income": "Income", "expense": "Expense", "transfer": "Transfer" },
+    "types": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer"
+    },
     "filterAll": "All",
     "noTransactions": "No transactions yet",
     "deleteConfirm": "Delete this transaction?"
