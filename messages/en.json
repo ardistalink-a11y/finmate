@@ -215,7 +215,13 @@
     "utilization": "Utilization",
     "incomparable": "Not comparable",
     "accountSummary": "Account summary",
-    "unknownAccount": "Unknown account"
+    "unknownAccount": "Unknown account",
+    "liabilitiesSummary": "Debt and liability summary",
+    "liabilitiesDescription": "Shows liabilities with an outstanding balance. Fully paid liabilities are excluded.",
+    "liabilityName": "Liability",
+    "principal": "Original principal",
+    "outstanding": "Outstanding balance",
+    "noOutstandingLiabilities": "No outstanding liabilities."
   },
   "budgets": {
     "title": "Budgets",
