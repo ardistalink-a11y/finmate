@@ -34,10 +34,10 @@ export default async function RecurringPage({ params }: { params: Promise<{ loca
       </Card>)}</div>
       <Card className="h-fit">
         <h2 className="text-base font-semibold">{t("add")}</h2>
-        {(accounts ?? []).length === 0 ? <p className="mt-3 text-sm text-muted">{t("transactions.noAccountPrompt")}</p> : <form action={createRecurring} className="mt-4 space-y-4">
+        {(accounts ?? []).length === 0 ? <p className="mt-3 text-sm text-muted">{t("noAccountPrompt")}</p> : <form action={createRecurring} className="mt-4 space-y-4">
           <div><Label htmlFor="recurring-account">{t("account")}</Label><select id="recurring-account" name="account_id" className="input" required>{accounts!.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
           <div><Label htmlFor="recurring-type">{t("type")}</Label><select id="recurring-type" name="type" className="input"><option value="expense">{t("expense")}</option><option value="income">{t("income")}</option></select></div>
-          <div><Label htmlFor="recurring-category">{t("transactions.category")}</Label><select id="recurring-category" name="category_id" className="input"><option value="">{t("transactions.uncategorized")}</option>{(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+          <div><Label htmlFor="recurring-category">{t("category")}</Label><select id="recurring-category" name="category_id" className="input"><option value="">{t("uncategorized")}</option>{(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
           <div><Label htmlFor="recurring-new-amount">{t("amount")}</Label><Input id="recurring-new-amount" name="amount" type="number" min="0.01" step="0.01" required /></div>
           <div><Label htmlFor="recurring-new-note">{t("note")}</Label><Input id="recurring-new-note" name="note" maxLength={280} /></div>
           <div><Label htmlFor="recurring-frequency">{t("frequency")}</Label><select id="recurring-frequency" name="frequency" className="input"><option value="monthly">{t("monthly")}</option><option value="weekly">{t("weekly")}</option><option value="yearly">{t("yearly")}</option></select></div>
