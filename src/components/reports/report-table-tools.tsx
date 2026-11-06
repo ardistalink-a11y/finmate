@@ -26,6 +26,7 @@ type Labels = {
   category: string;
   account: string;
   amount: string;
+  currency: string;
   amountBase: string;
   income: string;
   expense: string;
@@ -37,6 +38,78 @@ type Labels = {
   noTransactions: string;
   noSearchResults: string;
 };
+
+function TransactionTable({
+  rows,
+  labels,
+  locale,
+  baseCurrency,
+}: {
+  rows: ReportTransaction[];
+  labels: Labels;
+  locale: string;
+  baseCurrency: string;
+}) {
+  const typeLabel = (type: ReportTransaction["type"]) => labels[type];
+
+  return (
+    <table className="w-full min-w-[850px]">
+      <thead className="border-b bg-surface/50 text-left text-xs font-medium text-muted">
+        <tr>
+          <th className="px-3 py-2.5">{labels.date}</th>
+          <th className="px-3 py-2.5">{labels.type}</th>
+          <th className="px-3 py-2.5">{labels.description}</th>
+          <th className="px-3 py-2.5">{labels.category}</th>
+          <th className="px-3 py-2.5">{labels.account}</th>
+          <th className="px-3 py-2.5 text-right">{labels.amount}</th>
+          <th className="px-3 py-2.5 text-right">{labels.amountBase}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => {
+          const baseAmount =
+            row.type === "transfer"
+              ? null
+              : row.type === "expense"
+                ? -Math.abs(row.amountBase)
+                : Math.abs(row.amountBase);
+          return (
+            <tr key={row.id} className="border-b last:border-0">
+              <td className="whitespace-nowrap px-3 py-2.5 text-sm text-muted">
+                {new Date(`${row.date}T12:00:00`).toLocaleDateString(
+                  locale === "id" ? "id-ID" : "en-US",
+                  { day: "2-digit", month: "short", year: "numeric" }
+                )}
+              </td>
+              <td
+                className={`whitespace-nowrap px-3 py-2.5 text-sm ${
+                  row.type === "income"
+                    ? "text-income"
+                    : row.type === "expense"
+                      ? "text-expense"
+                      : "text-muted"
+                }`}
+              >
+                {typeLabel(row.type)}
+              </td>
+              <td className="max-w-56 truncate px-3 py-2.5 text-sm">{row.description}</td>
+              <td className="px-3 py-2.5 text-sm text-muted">{row.category}</td>
+              <td className="px-3 py-2.5 text-sm text-muted">{row.account}</td>
+              <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
+                {formatMoney(Math.abs(row.amount), row.currency, locale)}
+              </td>
+              <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
+                {baseAmount === null
+                  ? "—"
+                  : formatMoney(baseAmount, baseCurrency, locale, { signed: true })}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
 
 export function ReportTableTools({
   rows,
@@ -59,7 +132,13 @@ export function ReportTableTools({
   const query = search.trim().toLocaleLowerCase();
   const filteredRows = query
     ? rows.filter((row) =>
-        [row.description, row.category, row.account, row.type, row.date]
+        [
+          row.description,
+          row.category,
+          row.account,
+          labels[row.type],
+          row.date,
+        ]
           .join(" ")
           .toLocaleLowerCase()
           .includes(query)
@@ -71,7 +150,6 @@ export function ReportTableTools({
     currentPage * pageSize,
     (currentPage + 1) * pageSize
   );
-  const typeLabel = (type: ReportTransaction["type"]) => labels[type];
 
   function downloadCsv() {
     const csvRows = [
@@ -86,9 +164,9 @@ export function ReportTableTools({
         labels.amountBase,
         baseCurrency,
       ],
-      ...filteredRows.map((row) => [
+      ...rows.map((row) => [
         row.date,
-        typeLabel(row.type),
+        labels[row.type],
         row.description,
         row.category,
         row.account,
@@ -104,7 +182,8 @@ export function ReportTableTools({
     ];
     const escapeCell = (value: string | number) => {
       const text = String(value);
-      const safeText = typeof value === "string" && /^[=+@]/.test(text) ? `'${text}` : text;
+      const safeText =
+        typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
       return `"${safeText.replaceAll('"', '""')}"`;
     };
     const csv = csvRows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
@@ -119,7 +198,7 @@ export function ReportTableTools({
 
   return (
     <Card className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="report-print-hide flex flex-wrap items-center justify-between gap-3">
         <Input
           aria-label={labels.search}
           placeholder={labels.search}
@@ -130,7 +209,7 @@ export function ReportTableTools({
           }}
           className="max-w-sm"
         />
-        <div className="report-print-hide flex gap-2">
+        <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={downloadCsv}>
             {labels.exportCsv}
           </Button>
@@ -141,70 +220,29 @@ export function ReportTableTools({
       </div>
 
       {visibleRows.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted">
+        <p className="report-print-hide py-8 text-center text-sm text-muted">
           {rows.length === 0 ? labels.noTransactions : labels.noSearchResults}
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px]">
-            <thead className="border-b bg-surface/50 text-left text-xs font-medium text-muted">
-              <tr>
-                <th className="px-3 py-2.5">{labels.date}</th>
-                <th className="px-3 py-2.5">{labels.type}</th>
-                <th className="px-3 py-2.5">{labels.description}</th>
-                <th className="px-3 py-2.5">{labels.category}</th>
-                <th className="px-3 py-2.5">{labels.account}</th>
-                <th className="px-3 py-2.5 text-right">{labels.amount}</th>
-                <th className="px-3 py-2.5 text-right">{labels.amountBase}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => {
-                const baseAmount =
-                  row.type === "transfer"
-                    ? null
-                    : row.type === "expense"
-                      ? -Math.abs(row.amountBase)
-                      : Math.abs(row.amountBase);
-                return (
-                  <tr key={row.id} className="border-b last:border-0">
-                    <td className="whitespace-nowrap px-3 py-2.5 text-sm text-muted">
-                      {new Date(`${row.date}T12:00:00`).toLocaleDateString(
-                        locale === "id" ? "id-ID" : "en-US",
-                        { day: "2-digit", month: "short", year: "numeric" }
-                      )}
-                    </td>
-                    <td
-                      className={`whitespace-nowrap px-3 py-2.5 text-sm ${
-                        row.type === "income"
-                          ? "text-income"
-                          : row.type === "expense"
-                            ? "text-expense"
-                            : "text-muted"
-                      }`}
-                    >
-                      {typeLabel(row.type)}
-                    </td>
-                    <td className="max-w-56 truncate px-3 py-2.5 text-sm">
-                      {row.description}
-                    </td>
-                    <td className="px-3 py-2.5 text-sm text-muted">{row.category}</td>
-                    <td className="px-3 py-2.5 text-sm text-muted">{row.account}</td>
-                    <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
-                      {formatMoney(Math.abs(row.amount), row.currency, locale)}
-                    </td>
-                    <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
-                      {baseAmount === null
-                        ? "—"
-                        : formatMoney(baseAmount, baseCurrency, locale, { signed: true })}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="report-print-hide overflow-x-auto">
+          <TransactionTable
+            rows={visibleRows}
+            labels={labels}
+            locale={locale}
+            baseCurrency={baseCurrency}
+          />
         </div>
       )}
+      {rows.length > 0 ? (
+        <div className="hidden overflow-x-auto print:block">
+          <TransactionTable
+            rows={rows}
+            labels={labels}
+            locale={locale}
+            baseCurrency={baseCurrency}
+          />
+        </div>
+      ) : null}
 
       <div className="report-print-hide flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
         <span>
