@@ -26,6 +26,7 @@ export type ReportExportData = {
     previousExpense: number;
     previousNet: number;
     previousSavingsRate: number;
+    comparisonPeriod: string;
   };
   trend: { month: string; income: number; expense: number }[];
   expenseCategories: { name: string; total: number; count: number }[];
@@ -199,7 +200,8 @@ export function ReportTableTools({
       [labels.expense, exportData.summary.expense],
       [labels.netCashflow, exportData.summary.net],
       [labels.savingsRate, `${exportData.summary.savingsRate.toFixed(1)}%`],
-      [labels.previousPeriod, labels.income, labels.expense, labels.netCashflow, labels.savingsRate],
+      [labels.previousPeriod, exportData.summary.comparisonPeriod],
+      ["", labels.income, labels.expense, labels.netCashflow, labels.savingsRate],
       [
         "",
         exportData.summary.previousIncome,
