@@ -194,6 +194,7 @@
     "page": "Rows",
     "of": "of",
     "noTransactions": "No transactions in this period.",
-    "noSearchResults": "No transactions match your search."
+    "noSearchResults": "No transactions match your search.",
+    "currency": "Currency"
   }
 }
