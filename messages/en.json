@@ -97,7 +97,8 @@
       "loan": "Loan"
     },
     "total": "Total balance ({currency})",
-    "archive": "Archive"
+    "archive": "Archive",
+    "totalByCurrency": "Total balance by currency"
   },
   "transactions": {
     "title": "Transactions",
@@ -240,7 +241,8 @@
     "save": "Save changes",
     "delete": "Delete",
     "empty": "No financial goals yet.",
-    "progress": "Progress"
+    "progress": "Progress",
+    "currency": "Currency"
   },
   "debts": {
     "title": "Liabilities",
@@ -274,11 +276,27 @@
     "save": "Save changes",
     "delete": "Delete",
     "empty": "No recurring transactions yet.",
-    "active": "Active"
+    "active": "Active",
+    "category": "Category",
+    "uncategorized": "Uncategorized",
+    "noAccountPrompt": "Add a financial account before creating a recurring transaction."
   },
   "import": {
     "title": "Import Transactions",
     "subtitle": "Upload a CSV or Excel file, review the mapping, then import into a financial account.",
-    "template": "Download Excel template"
+    "template": "Download Excel template",
+    "file": "CSV or Excel file",
+    "date": "Date",
+    "description": "Description",
+    "amount": "Amount",
+    "chooseAccount": "Choose destination account",
+    "importing": "Importing…",
+    "importRows": "Import {count} rows",
+    "detectedError": "Date and amount columns could not be detected.",
+    "tooMany": "A maximum of 1,000 transactions can be imported at once. Split the file and try again.",
+    "ready": "{count} rows ready to import from {total} rows.",
+    "unreadable": "The file could not be read.",
+    "preview": "Transaction preview",
+    "emptyAccounts": "Add a financial account before importing."
   }
 }
