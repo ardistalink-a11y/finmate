@@ -140,7 +140,7 @@ function TransactionTable({
               <td className="px-3 py-2.5 text-sm text-muted">{row.category}</td>
               <td className="px-3 py-2.5 text-sm text-muted">{row.account}</td>
               <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
-                {formatMoney(Math.abs(row.amount), row.currency, locale)}
+                {formatMoney(row.amount, row.currency, locale, { signed: true })}
               </td>
               <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
                 {baseAmount === null
