@@ -324,7 +324,7 @@ export default async function ReportsPage({
     for (const row of selected) {
       if (row.type !== kind) continue;
       const key = row.category_id ?? "__uncategorized";
-      const group = groups.get(key) ?? {
+      const group = groups.get(key) ?? { key,
         name: row.category_id
           ? categoryMap.get(row.category_id) ?? t("uncategorized")
           : t("uncategorized"),
@@ -402,7 +402,7 @@ export default async function ReportsPage({
         category: budget.category_id
           ? categoryMap.get(budget.category_id) ?? t("uncategorized")
           : t("allCategories"),
-        period: budget.period,
+        period: budget.period,\n        periodLabel: t(budget.period),
         currency: budget.currency,
         limit,
         spent,
@@ -667,8 +667,7 @@ export default async function ReportsPage({
           locale={locale}
           baseCurrency={currency}
           dateFrom={start}
-          dateTo={end}
-        />
+          dateTo={end}\n          exportData={reportExportData}\n        />
       </div>
       <p className="text-xs text-muted">{t("comparisonPeriod")}: {previousDateLabel}</p>
     </div>
