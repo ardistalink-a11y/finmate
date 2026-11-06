@@ -492,7 +492,7 @@ export default async function ReportsPage({
     netCashflow: t("netCashflow"),
     expensesByCategory: t("expensesByCategory"),
     incomeBySource: t("incomeBySource"),
-    accountSummary: t("accountSummary"),
+    walletSummary: t("accountSummary"),
     budgetVsActual: t("budgetVsActual"),
     budgetName: t("budgetName"),
     budgetPeriod: t("period"),
