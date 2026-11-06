@@ -32,6 +32,7 @@ export type ReportExportData = {
   expenseCategories: { name: string; total: number; count: number }[];
   incomeCategories: { name: string; total: number; count: number }[];
   wallets: { name: string; income: number; expense: number; net: number; count: number }[];
+  liabilities: { name: string; currency: string; principal: number; outstanding: number }[];
   budgets: {
     name: string;
     category: string;
@@ -75,6 +76,10 @@ type Labels = {
   expensesByCategory: string;
   incomeBySource: string;
   walletSummary: string;
+  liabilitiesSummary: string;
+  liabilityName: string;
+  principal: string;
+  outstanding: string;
   budgetVsActual: string;
   budgetName: string;
   budgetPeriod: string;
@@ -245,6 +250,9 @@ export function ReportTableTools({
         item.count,
       ]),
       [],
+      [labels.liabilitiesSummary, labels.liabilityName, labels.principal, labels.outstanding, labels.currency],
+      ...exportData.liabilities.map((item) => ["", item.name, item.principal, item.outstanding, item.currency]),
+      [],
       [labels.budgetVsActual, labels.budgetName, labels.category, labels.budgetPeriod, labels.budgetAmount, labels.actualAmount, labels.utilization, labels.currency],
       ...exportData.budgets.map((item) => [
         "",
@@ -274,7 +282,7 @@ export function ReportTableTools({
         row.description,
         row.category,
         row.account,
-        Math.abs(row.amount),
+        row.amount,
         row.currency,
         row.type === "transfer"
           ? ""
