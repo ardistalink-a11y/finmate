@@ -23,7 +23,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="finmate-theme-v2">
         {children}
       </ThemeProvider>
     </NextIntlClientProvider>
