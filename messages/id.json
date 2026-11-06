@@ -72,7 +72,10 @@
     "noTransactions": "Belum ada transaksi. Yuk mulai catat yang pertama!",
     "noAccounts": "Belum ada dompet",
     "addFirstAccount": "Tambah Dompet Pertama",
-    "quickAdd": "Catat Cepat"
+    "quickAdd": "Catat Cepat",
+    "monthlyCashflow": "Pemasukan & Pengeluaran per Bulan",
+    "monthlyCashflowDescription": "Perbandingan arus kas selama 12 bulan terakhir.",
+    "slideToViewMonths": "Geser untuk melihat bulan lainnya"
   },
   "accounts": {
     "title": "Dompet",
@@ -102,7 +105,11 @@
     "type": "Jenis",
     "amount": "Jumlah",
     "note": "Catatan",
-    "types": { "income": "Pemasukan", "expense": "Pengeluaran", "transfer": "Transfer" },
+    "types": {
+      "income": "Pemasukan",
+      "expense": "Pengeluaran",
+      "transfer": "Transfer"
+    },
     "filterAll": "Semua",
     "noTransactions": "Belum ada transaksi",
     "deleteConfirm": "Hapus transaksi ini?"

@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/currency";
 import { fetchAllUserTransactions } from "@/server/queries/transactions";
-import { cashflow, byCategory } from "@/lib/finance/aggregates";
+import { cashflow, byCategory, monthlyTrend } from "@/lib/finance/aggregates";
+import { MonthlyCashflowChart } from "@/components/dashboard/monthly-cashflow-chart";
 import { Card } from "@/components/ui";
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
@@ -57,6 +58,15 @@ export default async function DashboardPage({
         category_id: x.category_id,
         date: x.date,
       }))
+  );
+
+  const monthlyCashflow = monthlyTrend(
+    txs.map((x) => ({
+      type: x.type as "income" | "expense" | "transfer",
+      amount_base: Number(x.amount_base),
+      category_id: x.category_id,
+      date: x.date,
+    }))
   );
 
   const topCategories = byCategory(
@@ -131,6 +141,21 @@ export default async function DashboardPage({
           </div>
         </Card>
       </div>
+
+      <Card>
+        <div className="mb-4">
+          <h2 className="text-sm font-medium">{t("monthlyCashflow")}</h2>
+          <p className="mt-1 text-xs text-muted">{t("monthlyCashflowDescription")}</p>
+        </div>
+        <MonthlyCashflowChart
+          data={monthlyCashflow}
+          locale={locale}
+          currency={baseCurrency}
+          incomeLabel={t("income")}
+          expenseLabel={t("expense")}
+          monthRangeLabel={t("slideToViewMonths")}
+        />
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
