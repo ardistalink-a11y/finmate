@@ -50,7 +50,7 @@
     "budgets": "Budgets",
     "recurring": "Recurring Transactions",
     "goals": "Financial Goals",
-    "debts": "Liabilities",
+    "debts": "Debt",
     "reports": "Financial Reports",
     "import": "Import Transactions",
     "advisor": "AI Finance Assistant",
@@ -76,7 +76,7 @@
     "monthlyCashflow": "Monthly Income & Expenses",
     "monthlyCashflowDescription": "Cash flow comparison over the last 12 months.",
     "slideToViewMonths": "Slide to view other months",
-    "netWorthByCurrency": "Net balance by currency",
+    "netWorthByCurrency": "Account balances by currency",
     "addAccountPrompt": "Add your first financial account to start recording transactions.",
     "uncategorized": "Uncategorized"
   },
@@ -213,7 +213,9 @@
     "budgetAmount": "Budget limit",
     "actualAmount": "Actual spending",
     "utilization": "Utilization",
-    "incomparable": "Not comparable"
+    "incomparable": "Not comparable",
+    "accountSummary": "Account summary",
+    "unknownAccount": "Unknown account"
   },
   "budgets": {
     "title": "Budgets",
@@ -245,7 +247,7 @@
     "currency": "Currency"
   },
   "debts": {
-    "title": "Liabilities",
+    "title": "Debt",
     "subtitle": "Track outstanding balances, interest rates, and due dates.",
     "add": "Record liability",
     "name": "Liability name",
