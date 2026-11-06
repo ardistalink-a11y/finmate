@@ -147,7 +147,7 @@
   },
   "reports": {
     "title": "Laporan Keuangan",
-    "description": "Catatan / merchant",
+    "description": "Ikhtisar arus kas, kategori transaksi, saldo akun, dan realisasi anggaran.",
     "period": "Periode laporan",
     "currentMonth": "Bulan ini",
     "lastMonth": "Bulan lalu",
