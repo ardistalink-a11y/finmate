@@ -195,6 +195,12 @@
     "of": "of",
     "noTransactions": "No transactions in this period.",
     "noSearchResults": "No transactions match your search.",
-    "currency": "Currency"
+    "currency": "Currency",
+    "month": "Month",
+    "budgetName": "Budget",
+    "budgetAmount": "Budget limit",
+    "actualAmount": "Actual spending",
+    "utilization": "Utilization",
+    "incomparable": "Not comparable"
   }
 }
