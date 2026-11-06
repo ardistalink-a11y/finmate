@@ -18,8 +18,6 @@ export default async function BudgetsPage({ params }: { params: Promise<{ locale
       <Card className="space-y-3">
         {(budgets ?? []).length === 0 ? <p className="py-10 text-center text-sm text-muted">{t("empty")}</p> : budgets!.map((b) => {
           const amount = Number(b.amount);
-          const periodDays = b.period === "weekly" ? 7 : b.period === "yearly" ? 365 : 30;
-          const dailyLimit = amount / periodDays;
           const progress = Math.min(100, Math.max(0, Number(b.spent ?? 0) / Math.max(amount, 1) * 100));
           return <details key={b.id} className="group rounded-xl border bg-surface p-4">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
