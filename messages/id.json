@@ -41,7 +41,19 @@
     "invalidCredentials": "Email atau password salah",
     "registerSuccess": "Akun berhasil dibuat, silakan cek email untuk verifikasi",
     "resetSent": "Link reset telah dikirim ke email kamu",
-    "signOut": "Keluar"
+    "signOut": "Keluar",
+    "forgotPasswordDescription": "Masukkan email akunmu. Jika terdaftar, kami akan mengirim tautan untuk membuat password baru.",
+    "sendResetLink": "Kirim link reset",
+    "backToLogin": "Kembali ke halaman masuk",
+    "newPassword": "Password baru",
+    "confirmPassword": "Konfirmasi password",
+    "passwordsDoNotMatch": "Password tidak sama",
+    "recoverySessionInvalid": "Sesi reset tidak valid atau sudah kedaluwarsa. Minta tautan reset baru.",
+    "updatePasswordTitle": "Buat password baru",
+    "updatePasswordDescription": "Gunakan password minimal 8 karakter.",
+    "updatePassword": "Simpan password baru",
+    "passwordUpdated": "Password berhasil diperbarui",
+    "requestAnotherReset": "Minta tautan reset baru"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -102,7 +114,11 @@
     "type": "Jenis",
     "amount": "Jumlah",
     "note": "Catatan",
-    "types": { "income": "Pemasukan", "expense": "Pengeluaran", "transfer": "Transfer" },
+    "types": {
+      "income": "Pemasukan",
+      "expense": "Pengeluaran",
+      "transfer": "Transfer"
+    },
     "filterAll": "Semua",
     "noTransactions": "Belum ada transaksi",
     "deleteConfirm": "Hapus transaksi ini?"
