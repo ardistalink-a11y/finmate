@@ -56,7 +56,7 @@ export function MonthlyCashflowChart({
   return (
     <div
       role="img"
-      aria-label={`${incomeLabel} and ${expenseLabel} by month`}
+      aria-label={`${incomeLabel} · ${expenseLabel}`}
       className="h-72 w-full"
     >
       <ResponsiveContainer width="100%" height="100%">
@@ -82,7 +82,7 @@ export function MonthlyCashflowChart({
             axisLine={false}
           />
           <Tooltip
-            formatter={(value: number | string) => currencyFormatter.format(Number(value))}
+            formatter={(value) => currencyFormatter.format(Number(value))}
             contentStyle={{
               backgroundColor: "hsl(var(--surface))",
               borderColor: "hsl(var(--border))",
