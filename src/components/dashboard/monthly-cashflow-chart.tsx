@@ -43,7 +43,6 @@ export function MonthlyCashflowChart({
   const currencyFormatter = new Intl.NumberFormat(intlLocale, {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
   });
   const compactFormatter = new Intl.NumberFormat(intlLocale, {
     style: "currency",
