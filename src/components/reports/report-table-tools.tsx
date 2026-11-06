@@ -16,6 +16,33 @@ export type ReportTransaction = {
   account: string;
 };
 
+export type ReportExportData = {
+  summary: {
+    income: number;
+    expense: number;
+    net: number;
+    savingsRate: number;
+    previousIncome: number;
+    previousExpense: number;
+    previousNet: number;
+    previousSavingsRate: number;
+  };
+  trend: { month: string; income: number; expense: number }[];
+  expenseCategories: { name: string; total: number; count: number }[];
+  incomeCategories: { name: string; total: number; count: number }[];
+  wallets: { name: string; income: number; expense: number; net: number; count: number }[];
+  budgets: {
+    name: string;
+    category: string;
+    period: string;
+    currency: string;
+    limit: number;
+    spent: number;
+    comparable: boolean;
+    percent: number | null;
+  }[];
+};
+
 type Labels = {
   exportCsv: string;
   savePdf: string;
@@ -37,6 +64,24 @@ type Labels = {
   of: string;
   noTransactions: string;
   noSearchResults: string;
+  reportTitle: string;
+  periodSummary: string;
+  savingsRate: string;
+  previousPeriod: string;
+  monthlyTrend: string;
+  month: string;
+  netCashflow: string;
+  expensesByCategory: string;
+  incomeBySource: string;
+  walletSummary: string;
+  budgetVsActual: string;
+  budgetName: string;
+  budgetPeriod: string;
+  budgetAmount: string;
+  actualAmount: string;
+  utilization: string;
+  transactionCount: string;
+  incomparable: string;
 };
 
 function TransactionTable({
@@ -50,8 +95,6 @@ function TransactionTable({
   locale: string;
   baseCurrency: string;
 }) {
-  const typeLabel = (type: ReportTransaction["type"]) => labels[type];
-
   return (
     <table className="w-full min-w-[850px]">
       <thead className="border-b bg-surface/50 text-left text-xs font-medium text-muted">
@@ -90,7 +133,7 @@ function TransactionTable({
                       : "text-muted"
                 }`}
               >
-                {typeLabel(row.type)}
+                {labels[row.type]}
               </td>
               <td className="max-w-56 truncate px-3 py-2.5 text-sm">{row.description}</td>
               <td className="px-3 py-2.5 text-sm text-muted">{row.category}</td>
@@ -118,6 +161,7 @@ export function ReportTableTools({
   baseCurrency,
   dateFrom,
   dateTo,
+  exportData,
 }: {
   rows: ReportTransaction[];
   labels: Labels;
@@ -125,6 +169,7 @@ export function ReportTableTools({
   baseCurrency: string;
   dateFrom: string;
   dateTo: string;
+  exportData: ReportExportData;
 }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -132,13 +177,7 @@ export function ReportTableTools({
   const query = search.trim().toLocaleLowerCase();
   const filteredRows = query
     ? rows.filter((row) =>
-        [
-          row.description,
-          row.category,
-          row.account,
-          labels[row.type],
-          row.date,
-        ]
+        [row.description, row.category, row.account, labels[row.type], row.date]
           .join(" ")
           .toLocaleLowerCase()
           .includes(query)
@@ -152,7 +191,70 @@ export function ReportTableTools({
   );
 
   function downloadCsv() {
-    const csvRows = [
+    const csvRows: (string | number)[][] = [
+      [labels.reportTitle, `${dateFrom} – ${dateTo}`],
+      [],
+      [labels.periodSummary, labels.amountBase],
+      [labels.income, exportData.summary.income],
+      [labels.expense, exportData.summary.expense],
+      [labels.netCashflow, exportData.summary.net],
+      [labels.savingsRate, `${exportData.summary.savingsRate.toFixed(1)}%`],
+      [labels.previousPeriod, labels.income, labels.expense, labels.netCashflow, labels.savingsRate],
+      [
+        "",
+        exportData.summary.previousIncome,
+        exportData.summary.previousExpense,
+        exportData.summary.previousNet,
+        `${exportData.summary.previousSavingsRate.toFixed(1)}%`,
+      ],
+      [],
+      [labels.monthlyTrend, labels.month, labels.income, labels.expense, labels.netCashflow],
+      ...exportData.trend.map((item) => [
+        "",
+        item.month,
+        item.income,
+        item.expense,
+        item.income - item.expense,
+      ]),
+      [],
+      [labels.expensesByCategory, labels.category, labels.amountBase, labels.transactionCount],
+      ...exportData.expenseCategories.map((item) => [
+        "",
+        item.name,
+        item.total,
+        item.count,
+      ]),
+      [],
+      [labels.incomeBySource, labels.category, labels.amountBase, labels.transactionCount],
+      ...exportData.incomeCategories.map((item) => [
+        "",
+        item.name,
+        item.total,
+        item.count,
+      ]),
+      [],
+      [labels.walletSummary, labels.account, labels.income, labels.expense, labels.netCashflow, labels.transactionCount],
+      ...exportData.wallets.map((item) => [
+        "",
+        item.name,
+        item.income,
+        item.expense,
+        item.net,
+        item.count,
+      ]),
+      [],
+      [labels.budgetVsActual, labels.budgetName, labels.category, labels.budgetPeriod, labels.budgetAmount, labels.actualAmount, labels.utilization, labels.currency],
+      ...exportData.budgets.map((item) => [
+        "",
+        item.name,
+        item.category,
+        item.period,
+        item.limit,
+        item.comparable ? item.spent : labels.incomparable,
+        item.percent === null ? labels.incomparable : `${item.percent.toFixed(1)}%`,
+        item.currency,
+      ]),
+      [],
       [
         labels.date,
         labels.type,
@@ -183,7 +285,7 @@ export function ReportTableTools({
     const escapeCell = (value: string | number) => {
       const text = String(value);
       const safeText =
-        typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
+        typeof value === "string" && /^[\s=+\-@]/.test(text) ? `'${text}` : text;
       return `"${safeText.replaceAll('"', '""')}"`;
     };
     const csv = csvRows.map((row) => row.map(escapeCell).join(",")).join("\r\n");
@@ -193,7 +295,7 @@ export function ReportTableTools({
     link.href = url;
     link.download = `finmate-report-${dateFrom}-to-${dateTo}.csv`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return (
