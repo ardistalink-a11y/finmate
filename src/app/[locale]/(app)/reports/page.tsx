@@ -450,7 +450,7 @@ export default async function ReportsPage({
     trend,
     expenseCategories,
     incomeCategories,
-    accounts,
+    wallets: accounts,
     budgets: reportBudgets.map((budget) => ({
       name: budget.name,
       category: budget.category,
