@@ -35,7 +35,7 @@ export function MonthlyCashflowChart({
   const intlLocale = locale === "id" ? "id-ID" : "en-US";
   const monthFormatter = new Intl.DateTimeFormat(intlLocale, {
     month: "short",
-    year: "2-digit",
+    year: "numeric",
   });
   const currencyFormatter = new Intl.NumberFormat(intlLocale, {
     style: "currency",
@@ -48,20 +48,29 @@ export function MonthlyCashflowChart({
     notation: "compact",
     maximumFractionDigits: 1,
   });
-  const chartData = data.map((item) => ({
-    ...item,
-    monthLabel: monthFormatter.format(new Date(`${item.month}-01T12:00:00`)),
-  }));
+  const chartData = data
+    .map((item) => ({
+      ...item,
+      monthLabel: monthFormatter.format(new Date(`${item.month}-01T12:00:00`)),
+    }))
+    .sort((first, second) => first.month.localeCompare(second.month));
+  const visibleMonthCount = Math.min(6, chartData.length);
+  const maxStartIndex = Math.max(0, chartData.length - visibleMonthCount);
+  const [startIndex, setStartIndex] = useState(maxStartIndex);
+  const visibleData = chartData.slice(startIndex, startIndex + visibleMonthCount);
+  const rangeStart = visibleData[0]?.monthLabel;
+  const rangeEnd = visibleData[visibleData.length - 1]?.monthLabel;
 
   return (
-    <div
-      role="img"
-      aria-label={`${incomeLabel} · ${expenseLabel}`}
-      className="h-72 w-full"
-    >
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={chartData}
+    <div className="w-full">
+      <div
+        role="img"
+        aria-label={`${incomeLabel} · ${expenseLabel}`}
+        className="h-72 w-full"
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={visibleData}
           margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
           barGap={4}
           barCategoryGap="22%"
@@ -104,8 +113,27 @@ export function MonthlyCashflowChart({
             fill="hsl(var(--expense))"
             radius={[4, 4, 0, 0]}
           />
-        </BarChart>
-      </ResponsiveContainer>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3">
+        <div className="mb-1 flex justify-between text-xs text-muted">
+          <span>{rangeStart}</span>
+          <span>{rangeEnd}</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={maxStartIndex}
+          step={1}
+          value={Math.min(startIndex, maxStartIndex)}
+          onChange={(event) => setStartIndex(Number(event.target.value))}
+          aria-label={monthRangeLabel}
+          disabled={maxStartIndex === 0}
+          className="w-full accent-accent disabled:opacity-50"
+        />
+        <p className="mt-1 text-center text-xs text-muted">{monthRangeLabel}</p>
+      </div>
     </div>
   );
 }
