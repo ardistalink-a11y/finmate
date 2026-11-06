@@ -402,7 +402,12 @@ export default async function ReportsPage({
         category: budget.category_id
           ? categoryMap.get(budget.category_id) ?? t("uncategorized")
           : t("allCategories"),
-        period: budget.period,\n        periodLabel: t(budget.period),
+        period: budget.period,
+        periodLabel: budget.period === "weekly"
+          ? t("weekly")
+          : budget.period === "yearly"
+            ? t("yearly")
+            : t("monthly"),
         currency: budget.currency,
         limit,
         spent,
@@ -430,6 +435,32 @@ export default async function ReportsPage({
   const rangeTitle = selectedRange === "all"
     ? t("allTime")
     : `${formatDate(start)} – ${formatDate(end)}`;
+  const reportExportData = {
+    summary: {
+      income: currentTotals.income,
+      expense: currentTotals.expense,
+      net: currentTotals.net,
+      savingsRate,
+      previousIncome: previousTotals.income,
+      previousExpense: previousTotals.expense,
+      previousNet: previousTotals.net,
+      previousSavingsRate,
+    },
+    trend,
+    expenseCategories,
+    incomeCategories,
+    wallets,
+    budgets: reportBudgets.map((budget) => ({
+      name: budget.name,
+      category: budget.category,
+      period: budget.periodLabel,
+      currency: budget.currency,
+      limit: budget.limit,
+      spent: budget.spent,
+      comparable: budget.comparable,
+      percent: budget.percent,
+    })),
+  };
   const tableLabels = {
     exportCsv: t("exportCsv"),
     savePdf: t("savePdf"),
@@ -451,6 +482,24 @@ export default async function ReportsPage({
     of: t("of"),
     noTransactions: t("noTransactions"),
     noSearchResults: t("noSearchResults"),
+    reportTitle: t("title"),
+    periodSummary: t("periodSummary"),
+    savingsRate: t("savingsRate"),
+    previousPeriod: t("vsPrevious"),
+    monthlyTrend: t("monthlyTrend"),
+    month: t("month"),
+    netCashflow: t("netCashflow"),
+    expensesByCategory: t("expensesByCategory"),
+    incomeBySource: t("incomeBySource"),
+    walletSummary: t("walletSummary"),
+    budgetVsActual: t("budgetVsActual"),
+    budgetName: t("budgetName"),
+    budgetPeriod: t("period"),
+    budgetAmount: t("budgetAmount"),
+    actualAmount: t("actualAmount"),
+    utilization: t("utilization"),
+    transactionCount: t("transactionCount"),
+    incomparable: t("incomparable"),
   };
 
   return (
@@ -546,6 +595,35 @@ export default async function ReportsPage({
           expenseLabel={t("expense")}
           monthRangeLabel={t("slideToViewMonths")}
         />
+        <div className="mt-4 hidden overflow-x-auto print:block">
+          <table className="w-full text-sm">
+            <thead className="border-b text-left text-xs text-muted">
+              <tr>
+                <th className="py-2">{t("month")}</th>
+                <th className="py-2 text-right">{t("income")}</th>
+                <th className="py-2 text-right">{t("expense")}</th>
+                <th className="py-2 text-right">{t("netCashflow")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trend.map((item) => (
+                <tr key={item.month} className="border-b last:border-0">
+                  <td className="py-1.5">
+                    {new Date(`${item.month}-01T12:00:00`).toLocaleDateString(
+                      locale === "id" ? "id-ID" : "en-US",
+                      { month: "long", year: "numeric" }
+                    )}
+                  </td>
+                  <td className="num py-1.5 text-right">{formatMoney(item.income, currency, locale)}</td>
+                  <td className="num py-1.5 text-right">{formatMoney(item.expense, currency, locale)}</td>
+                  <td className="num py-1.5 text-right">
+                    {formatMoney(item.income - item.expense, currency, locale, { signed: true })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -667,7 +745,9 @@ export default async function ReportsPage({
           locale={locale}
           baseCurrency={currency}
           dateFrom={start}
-          dateTo={end}\n          exportData={reportExportData}\n        />
+          dateTo={end}
+          exportData={reportExportData}
+        />
       </div>
       <p className="text-xs text-muted">{t("comparisonPeriod")}: {previousDateLabel}</p>
     </div>
