@@ -74,7 +74,8 @@
     "addFirstAccount": "Tambah Dompet Pertama",
     "quickAdd": "Catat Cepat",
     "monthlyCashflow": "Pemasukan & Pengeluaran per Bulan",
-    "monthlyCashflowDescription": "Perbandingan arus kas selama 12 bulan terakhir."
+    "monthlyCashflowDescription": "Perbandingan arus kas selama 12 bulan terakhir.",
+    "slideToViewMonths": "Geser untuk melihat bulan lainnya"
   },
   "accounts": {
     "title": "Dompet",
