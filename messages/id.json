@@ -215,7 +215,13 @@
     "utilization": "Persentase penggunaan",
     "incomparable": "Tidak dapat dibandingkan",
     "accountSummary": "Ringkasan akun",
-    "unknownAccount": "Akun tidak diketahui"
+    "unknownAccount": "Akun tidak diketahui",
+    "liabilitiesSummary": "Ringkasan utang dan kewajiban",
+    "liabilitiesDescription": "Menampilkan kewajiban yang masih memiliki saldo terutang. Kewajiban yang telah lunas tidak ditampilkan.",
+    "liabilityName": "Nama kewajiban",
+    "principal": "Pokok awal",
+    "outstanding": "Saldo terutang",
+    "noOutstandingLiabilities": "Tidak ada saldo kewajiban terutang."
   },
   "budgets": {
     "title": "Anggaran",
