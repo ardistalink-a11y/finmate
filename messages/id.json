@@ -97,7 +97,8 @@
       "loan": "Pinjaman"
     },
     "total": "Total saldo ({currency})",
-    "archive": "Arsipkan"
+    "archive": "Arsipkan",
+    "totalByCurrency": "Total saldo per mata uang"
   },
   "transactions": {
     "title": "Transaksi",
@@ -240,7 +241,8 @@
     "save": "Simpan perubahan",
     "delete": "Hapus",
     "empty": "Belum ada tujuan keuangan.",
-    "progress": "Kemajuan"
+    "progress": "Kemajuan",
+    "currency": "Mata uang"
   },
   "debts": {
     "title": "Kewajiban",
@@ -274,11 +276,27 @@
     "save": "Simpan perubahan",
     "delete": "Hapus",
     "empty": "Belum ada transaksi berulang.",
-    "active": "Aktif"
+    "active": "Aktif",
+    "category": "Kategori",
+    "uncategorized": "Tanpa kategori",
+    "noAccountPrompt": "Tambahkan akun keuangan sebelum membuat transaksi berulang."
   },
   "import": {
     "title": "Impor Transaksi",
     "subtitle": "Unggah CSV atau Excel, tinjau hasil pemetaan, lalu impor ke akun keuangan.",
-    "template": "Unduh templat Excel"
+    "template": "Unduh templat Excel",
+    "file": "Berkas CSV atau Excel",
+    "date": "Tanggal",
+    "description": "Deskripsi",
+    "amount": "Nominal",
+    "chooseAccount": "Pilih akun tujuan",
+    "importing": "Mengimpor…",
+    "importRows": "Impor {count} baris",
+    "detectedError": "Kolom tanggal dan nominal tidak terdeteksi.",
+    "tooMany": "Maksimal 1.000 transaksi per impor. Bagi berkas lalu coba lagi.",
+    "ready": "{count} baris siap diimpor dari {total} baris.",
+    "unreadable": "Berkas tidak dapat dibaca.",
+    "preview": "Pratinjau transaksi",
+    "emptyAccounts": "Tambahkan akun keuangan sebelum mengimpor."
   }
 }
