@@ -44,20 +44,20 @@
     "signOut": "Keluar"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Ringkasan",
     "transactions": "Transaksi",
-    "accounts": "Dompet",
-    "budgets": "Budget",
-    "recurring": "Langganan",
-    "goals": "Target",
-    "debts": "Hutang",
-    "reports": "Laporan",
-    "import": "Import",
-    "advisor": "AI Advisor",
+    "accounts": "Akun Keuangan",
+    "budgets": "Anggaran",
+    "recurring": "Transaksi Berulang",
+    "goals": "Tujuan Keuangan",
+    "debts": "Kewajiban",
+    "reports": "Laporan Keuangan",
+    "import": "Impor Transaksi",
+    "advisor": "Asisten Keuangan AI",
     "settings": "Pengaturan",
-    "groupMain": "Utama",
+    "groupMain": "Keuangan",
     "groupPlanning": "Perencanaan",
-    "groupTools": "Alat"
+    "groupTools": "Analisis & Alat"
   },
   "dashboard": {
     "greeting": "Halo, {name}",
@@ -75,36 +75,40 @@
     "quickAdd": "Catat Cepat",
     "monthlyCashflow": "Pemasukan & Pengeluaran per Bulan",
     "monthlyCashflowDescription": "Perbandingan arus kas selama 12 bulan terakhir.",
-    "slideToViewMonths": "Geser untuk melihat bulan lainnya"
+    "slideToViewMonths": "Geser untuk melihat bulan lainnya",
+    "netWorthByCurrency": "Saldo bersih per mata uang",
+    "addAccountPrompt": "Tambahkan akun keuangan pertama untuk mulai mencatat.",
+    "uncategorized": "Tanpa kategori"
   },
   "accounts": {
-    "title": "Dompet",
-    "subtitle": "Semua rekening, e-wallet, dan kas dalam satu tempat",
-    "addAccount": "Tambah Dompet",
-    "name": "Nama Dompet",
-    "type": "Jenis",
-    "currency": "Mata Uang",
-    "openingBalance": "Saldo Awal",
+    "title": "Akun Keuangan",
+    "subtitle": "Rekening bank, dompet digital, kas, dan akun lainnya",
+    "addAccount": "Tambah Akun",
+    "name": "Nama akun",
+    "type": "Jenis akun",
+    "currency": "Mata uang",
+    "openingBalance": "Saldo awal",
     "types": {
-      "bank": "Bank",
-      "ewallet": "E-Wallet",
-      "cash": "Tunai",
-      "credit_card": "Kartu Kredit",
+      "bank": "Rekening bank",
+      "ewallet": "Dompet digital",
+      "cash": "Kas",
+      "credit_card": "Kartu kredit",
       "investment": "Investasi",
       "loan": "Pinjaman"
     },
-    "total": "Total ({currency})"
+    "total": "Total saldo ({currency})",
+    "archive": "Arsipkan"
   },
   "transactions": {
     "title": "Transaksi",
-    "subtitle": "Semua pemasukan dan pengeluaran",
-    "addTransaction": "Tambah Transaksi",
+    "subtitle": "Catat dan tinjau seluruh pemasukan, pengeluaran, dan transfer.",
+    "addTransaction": "Tambah transaksi",
     "date": "Tanggal",
-    "account": "Dompet",
+    "account": "Akun keuangan",
     "category": "Kategori",
-    "type": "Jenis",
-    "amount": "Jumlah",
-    "note": "Catatan",
+    "type": "Jenis transaksi",
+    "amount": "Nominal",
+    "note": "Deskripsi",
     "types": {
       "income": "Pemasukan",
       "expense": "Pengeluaran",
@@ -112,13 +116,17 @@
     },
     "filterAll": "Semua",
     "noTransactions": "Belum ada transaksi",
-    "deleteConfirm": "Hapus transaksi ini?"
+    "deleteConfirm": "Hapus transaksi ini?",
+    "merchant": "Penerima / sumber",
+    "chooseAccount": "Pilih akun",
+    "uncategorized": "Tanpa kategori",
+    "noAccountPrompt": "Tambahkan akun keuangan sebelum mencatat transaksi."
   },
   "settings": {
     "title": "Pengaturan",
     "profile": "Profil",
     "preferences": "Preferensi",
-    "baseCurrency": "Mata Uang Utama",
+    "baseCurrency": "Mata uang utama",
     "language": "Bahasa",
     "theme": "Tema",
     "themeLight": "Terang",
@@ -127,11 +135,14 @@
     "dangerZone": "Zona Berbahaya",
     "deleteAccount": "Hapus Akun",
     "deleteAccountWarning": "Semua data akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.",
-    "comingSoon": "Segera hadir"
+    "comingSoon": "Segera hadir",
+    "email": "Email",
+    "name": "Nama",
+    "description": "Kelola preferensi akun dan informasi profil Anda."
   },
   "comingSoon": {
     "title": "Segera Hadir",
-    "description": "Fitur ini sedang dalam pengembangan. Logic sudah siap, UI menyusul."
+    "description": "Fitur ini sedang dalam pengembangan."
   },
   "reports": {
     "title": "Laporan Keuangan",
@@ -202,5 +213,72 @@
     "actualAmount": "Realisasi",
     "utilization": "Persentase penggunaan",
     "incomparable": "Tidak dapat dibandingkan"
+  },
+  "budgets": {
+    "title": "Anggaran",
+    "subtitle": "Tetapkan batas pengeluaran dan pantau realisasi.",
+    "add": "Buat anggaran",
+    "name": "Nama anggaran",
+    "amount": "Batas anggaran",
+    "period": "Periode",
+    "weekly": "Mingguan",
+    "monthly": "Bulanan",
+    "yearly": "Tahunan",
+    "save": "Simpan perubahan",
+    "delete": "Hapus",
+    "empty": "Belum ada anggaran.",
+    "currency": "Mata uang"
+  },
+  "goals": {
+    "title": "Tujuan Keuangan",
+    "subtitle": "Rencanakan target dana dan pantau kemajuannya.",
+    "add": "Buat tujuan",
+    "name": "Nama tujuan",
+    "target": "Target dana",
+    "current": "Dana terkumpul",
+    "targetDate": "Tanggal target",
+    "save": "Simpan perubahan",
+    "delete": "Hapus",
+    "empty": "Belum ada tujuan keuangan.",
+    "progress": "Kemajuan"
+  },
+  "debts": {
+    "title": "Kewajiban",
+    "subtitle": "Pantau saldo utang, suku bunga, dan tanggal jatuh tempo.",
+    "add": "Catat kewajiban",
+    "name": "Nama kewajiban",
+    "principal": "Pokok pinjaman",
+    "outstanding": "Sisa kewajiban",
+    "interestRate": "Suku bunga tahunan (%)",
+    "dueDate": "Tanggal jatuh tempo",
+    "save": "Simpan perubahan",
+    "delete": "Hapus",
+    "empty": "Belum ada kewajiban tercatat.",
+    "currency": "Mata uang"
+  },
+  "recurring": {
+    "title": "Transaksi Berulang",
+    "subtitle": "Kelola transaksi terjadwal, seperti tagihan dan pemasukan rutin.",
+    "add": "Buat transaksi berulang",
+    "account": "Akun keuangan",
+    "amount": "Nominal",
+    "note": "Deskripsi",
+    "nextRun": "Tanggal berikutnya",
+    "frequency": "Frekuensi",
+    "weekly": "Mingguan",
+    "monthly": "Bulanan",
+    "yearly": "Tahunan",
+    "income": "Pemasukan",
+    "expense": "Pengeluaran",
+    "type": "Jenis transaksi",
+    "save": "Simpan perubahan",
+    "delete": "Hapus",
+    "empty": "Belum ada transaksi berulang.",
+    "active": "Aktif"
+  },
+  "import": {
+    "title": "Impor Transaksi",
+    "subtitle": "Unggah CSV atau Excel, tinjau hasil pemetaan, lalu impor ke akun keuangan.",
+    "template": "Unduh templat Excel"
   }
 }
