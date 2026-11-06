@@ -195,6 +195,12 @@
     "of": "dari",
     "noTransactions": "Tidak ada transaksi pada periode ini.",
     "noSearchResults": "Tidak ada transaksi yang cocok dengan pencarian.",
-    "currency": "Mata uang"
+    "currency": "Mata uang",
+    "month": "Bulan",
+    "budgetName": "Nama budget",
+    "budgetAmount": "Batas budget",
+    "actualAmount": "Realisasi",
+    "utilization": "Persentase penggunaan",
+    "incomparable": "Tidak dapat dibandingkan"
   }
 }
