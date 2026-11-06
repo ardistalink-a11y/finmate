@@ -41,7 +41,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <Card>
-            <div className="text-xs font-medium text-muted">{locale === "id" ? "Total per mata uang" : "Totals by currency"}</div>
+            <div className="text-xs font-medium text-muted">{t("totalByCurrency")}</div>
             <div className="mt-1 space-y-1">{Array.from(totalsByCurrency.entries()).map(([currency, amount]) => <div key={currency} className="num text-xl font-semibold">{formatMoney(amount, currency, locale)}</div>)}</div>
           </Card>
           {(accounts ?? []).length === 0 ? (
@@ -60,7 +60,7 @@ export default async function AccountsPage({ params }: { params: Promise<{ local
                   <div className="mt-4 num text-xl font-semibold">{formatMoney(balancesByAccount.get(a.id) ?? 0, a.currency, locale)}</div>
                   <form action={archiveAccountFromForm} className="mt-4 text-right">
                     <input type="hidden" name="id" value={a.id} />
-                    <Button type="submit" variant="ghost" size="sm">Arsipkan</Button>
+                    <Button type="submit" variant="ghost" size="sm">{t("archive")}</Button>
                   </form>
                 </Card>
               ))}

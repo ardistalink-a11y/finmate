@@ -15,7 +15,6 @@ export default async function DashboardPage({
 }) {
   const { locale } = await params;
   const t = await getTranslations("dashboard");
-  const tn = await getTranslations("nav");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -97,7 +96,7 @@ export default async function DashboardPage({
         <Card className="border-dashed">
           <div className="py-6 text-center">
             <h2 className="text-base font-medium">{t("noAccounts")}</h2>
-            <p className="mb-4 mt-1 text-sm text-muted">Start by adding your first wallet.</p>
+            <p className="mb-4 mt-1 text-sm text-muted">{t("addAccountPrompt")}</p>
             <Link
               href={`/${locale}/accounts`}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg hover:bg-accent-hover"
@@ -112,7 +111,7 @@ export default async function DashboardPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <div className="text-xs font-medium text-muted">
-            {locale === "id" ? "Saldo bersih per mata uang" : "Net worth by currency"}
+            {t("netWorthByCurrency")}
           </div>
           <div className="mt-2 space-y-1">
             {netWorthByCurrency.size === 0 ? (
@@ -198,7 +197,7 @@ export default async function DashboardPage({
               {topCategories.map((c) => (
                 <li key={c.category_id ?? "none"}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span>{catMap.get(c.category_id ?? "") ?? "Uncategorized"}</span>
+                    <span>{catMap.get(c.category_id ?? "") ?? t("uncategorized")}</span>
                     <span className="num text-xs text-muted">{formatMoney(c.total, baseCurrency, locale)}</span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
