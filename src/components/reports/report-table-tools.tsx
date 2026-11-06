@@ -301,7 +301,7 @@ export function ReportTableTools({
   }
 
   return (
-    <Card className="space-y-4">
+    <Card className="space-y-4 report-print-allow-break">
       <div className="report-print-hide flex flex-wrap items-center justify-between gap-3">
         <Input
           aria-label={labels.search}
