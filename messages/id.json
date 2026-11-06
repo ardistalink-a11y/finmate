@@ -50,7 +50,7 @@
     "budgets": "Anggaran",
     "recurring": "Transaksi Berulang",
     "goals": "Tujuan Keuangan",
-    "debts": "Kewajiban",
+    "debts": "Utang",
     "reports": "Laporan Keuangan",
     "import": "Impor Transaksi",
     "advisor": "Asisten Keuangan AI",
@@ -76,7 +76,7 @@
     "monthlyCashflow": "Pemasukan & Pengeluaran per Bulan",
     "monthlyCashflowDescription": "Perbandingan arus kas selama 12 bulan terakhir.",
     "slideToViewMonths": "Geser untuk melihat bulan lainnya",
-    "netWorthByCurrency": "Saldo bersih per mata uang",
+    "netWorthByCurrency": "Saldo akun per mata uang",
     "addAccountPrompt": "Tambahkan akun keuangan pertama untuk mulai mencatat.",
     "uncategorized": "Tanpa kategori"
   },
@@ -213,7 +213,9 @@
     "budgetAmount": "Batas budget",
     "actualAmount": "Realisasi",
     "utilization": "Persentase penggunaan",
-    "incomparable": "Tidak dapat dibandingkan"
+    "incomparable": "Tidak dapat dibandingkan",
+    "accountSummary": "Ringkasan akun",
+    "unknownAccount": "Akun tidak diketahui"
   },
   "budgets": {
     "title": "Anggaran",
@@ -245,8 +247,8 @@
     "currency": "Mata uang"
   },
   "debts": {
-    "title": "Kewajiban",
-    "subtitle": "Pantau saldo utang, suku bunga, dan tanggal jatuh tempo.",
+    "title": "Utang",
+    "subtitle": "Pantau saldo terutang, suku bunga, dan tanggal jatuh tempo.",
     "add": "Catat kewajiban",
     "name": "Nama kewajiban",
     "principal": "Pokok pinjaman",
