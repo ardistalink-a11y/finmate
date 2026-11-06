@@ -23,14 +23,14 @@ export default async function TransactionsPage({ params }: { params: Promise<{ l
       <div><h1 className="text-2xl font-semibold">{t("title")}</h1><p className="text-sm text-muted">{t("subtitle")}</p></div>
       <Card>
         <h2 className="mb-4 text-sm font-semibold">{t("addTransaction")}</h2>
-        {(accounts ?? []).length === 0 ? <p className="text-sm text-muted">Tambah dompet terlebih dahulu sebelum mencatat transaksi.</p> : (
+        {(accounts ?? []).length === 0 ? <p className="text-sm text-muted">{t("noAccountPrompt")}</p> : (
           <form action={createTransaction} className="grid gap-4 md:grid-cols-3">
             <div><Label htmlFor="type">{t("type")}</Label><select id="type" name="type" className="input" defaultValue="expense"><option value="expense">{t("types.expense")}</option><option value="income">{t("types.income")}</option></select></div>
-            <div><Label htmlFor="account_id">{t("account")}</Label><select id="account_id" name="account_id" className="input" required defaultValue=""><option value="" disabled>Pilih dompet</option>{(accounts ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-            <div><Label htmlFor="category_id">{t("category")}</Label><select id="category_id" name="category_id" className="input" defaultValue=""><option value="">Tanpa kategori</option>{(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
+            <div><Label htmlFor="account_id">{t("account")}</Label><select id="account_id" name="account_id" className="input" required defaultValue=""><option value="" disabled>{t("chooseAccount")}</option>{(accounts ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
+            <div><Label htmlFor="category_id">{t("category")}</Label><select id="category_id" name="category_id" className="input" defaultValue=""><option value="">{t("uncategorized")}</option>{(categories ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
             <div><Label htmlFor="amount">{t("amount")}</Label><Input id="amount" name="amount" type="number" min="0.01" step="0.01" required /></div>
             <div><Label htmlFor="date">{t("date")}</Label><Input id="date" name="date" type="date" defaultValue={today} required /></div>
-            <div><Label htmlFor="merchant">Merchant</Label><Input id="merchant" name="merchant" maxLength={120} /></div>
+            <div><Label htmlFor="merchant">{t("merchant")}</Label><Input id="merchant" name="merchant" maxLength={120} /></div>
             <div className="md:col-span-2"><Label htmlFor="note">{t("note")}</Label><Input id="note" name="note" maxLength={280} /></div>
             <div className="flex items-end"><Button type="submit" className="w-full">{t("addTransaction")}</Button></div>
           </form>
