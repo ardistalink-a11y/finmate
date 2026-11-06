@@ -386,7 +386,7 @@ export default async function ReportsPage({
     id: row.id,
     date: row.date,
     type: row.type,
-    amount: Number(row.amount),
+    amount: row.type === "expense" ? -Math.abs(Number(row.amount)) : row.type === "income" ? Math.abs(Number(row.amount)) : Number(row.amount),
     amountBase: Number(row.amount_base),
     currency: row.currency,
     description: row.note || row.merchant || "—",
