@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         {mobileOpen && (
-          <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 z-50 md:hidden print:hidden">
             <button className="absolute inset-0 bg-black/40" aria-label="Tutup menu" onClick={closeMobile} />
             <aside className="relative flex h-full w-[min(86vw,320px)] flex-col border-r bg-surface shadow-xl">
               <div className="flex h-16 items-center justify-between border-b px-5">
