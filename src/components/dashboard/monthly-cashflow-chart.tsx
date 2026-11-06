@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -23,6 +24,7 @@ type MonthlyCashflowChartProps = {
   currency: string;
   incomeLabel: string;
   expenseLabel: string;
+  monthRangeLabel: string;
 };
 
 export function MonthlyCashflowChart({
@@ -31,6 +33,7 @@ export function MonthlyCashflowChart({
   currency,
   incomeLabel,
   expenseLabel,
+  monthRangeLabel,
 }: MonthlyCashflowChartProps) {
   const intlLocale = locale === "id" ? "id-ID" : "en-US";
   const monthFormatter = new Intl.DateTimeFormat(intlLocale, {
@@ -57,7 +60,11 @@ export function MonthlyCashflowChart({
   const visibleMonthCount = Math.min(6, chartData.length);
   const maxStartIndex = Math.max(0, chartData.length - visibleMonthCount);
   const [startIndex, setStartIndex] = useState(maxStartIndex);
-  const visibleData = chartData.slice(startIndex, startIndex + visibleMonthCount);
+  const currentStartIndex = Math.min(startIndex, maxStartIndex);
+  const visibleData = chartData.slice(
+    currentStartIndex,
+    currentStartIndex + visibleMonthCount
+  );
   const rangeStart = visibleData[0]?.monthLabel;
   const rangeEnd = visibleData[visibleData.length - 1]?.monthLabel;
 
@@ -71,48 +78,48 @@ export function MonthlyCashflowChart({
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={visibleData}
-          margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
-          barGap={4}
-          barCategoryGap="22%"
-        >
-          <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fill: "hsl(var(--muted))", fontSize: 12 }}
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-          />
-          <YAxis
-            width={72}
-            tickFormatter={(value: number) => compactFormatter.format(value)}
-            tick={{ fill: "hsl(var(--muted))", fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            formatter={(value) => currencyFormatter.format(Number(value))}
-            contentStyle={{
-              backgroundColor: "hsl(var(--surface))",
-              borderColor: "hsl(var(--border))",
-              borderRadius: 8,
-              color: "hsl(var(--fg))",
-            }}
-            labelStyle={{ color: "hsl(var(--muted))" }}
-          />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar
-            dataKey="income"
-            name={incomeLabel}
-            fill="hsl(var(--income))"
-            radius={[4, 4, 0, 0]}
-          />
-          <Bar
-            dataKey="expense"
-            name={expenseLabel}
-            fill="hsl(var(--expense))"
-            radius={[4, 4, 0, 0]}
-          />
+            margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
+            barGap={4}
+            barCategoryGap="22%"
+          >
+            <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fill: "hsl(var(--muted))", fontSize: 12 }}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+            />
+            <YAxis
+              width={72}
+              tickFormatter={(value: number) => compactFormatter.format(value)}
+              tick={{ fill: "hsl(var(--muted))", fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              formatter={(value) => currencyFormatter.format(Number(value))}
+              contentStyle={{
+                backgroundColor: "hsl(var(--surface))",
+                borderColor: "hsl(var(--border))",
+                borderRadius: 8,
+                color: "hsl(var(--fg))",
+              }}
+              labelStyle={{ color: "hsl(var(--muted))" }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar
+              dataKey="income"
+              name={incomeLabel}
+              fill="hsl(var(--income))"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              dataKey="expense"
+              name={expenseLabel}
+              fill="hsl(var(--expense))"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -126,7 +133,7 @@ export function MonthlyCashflowChart({
           min={0}
           max={maxStartIndex}
           step={1}
-          value={Math.min(startIndex, maxStartIndex)}
+          value={currentStartIndex}
           onChange={(event) => setStartIndex(Number(event.target.value))}
           aria-label={monthRangeLabel}
           disabled={maxStartIndex === 0}
