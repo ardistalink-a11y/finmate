@@ -147,7 +147,7 @@
   },
   "reports": {
     "title": "Financial Reports",
-    "description": "Note / merchant",
+    "description": "Review cash flow, transaction categories, account balances, and budget performance.",
     "period": "Report period",
     "currentMonth": "This month",
     "lastMonth": "Last month",
