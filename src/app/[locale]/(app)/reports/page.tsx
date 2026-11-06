@@ -445,6 +445,7 @@ export default async function ReportsPage({
       previousExpense: previousTotals.expense,
       previousNet: previousTotals.net,
       previousSavingsRate,
+      comparisonPeriod: previousDateLabel,
     },
     trend,
     expenseCategories,
