@@ -3,6 +3,7 @@ import { Card } from "@/components/ui";
 
 export default async function AdvisorPage() {
   const t = await getTranslations("comingSoon");
+  const tn = await getTranslations("nav");
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <h1 className="text-2xl font-semibold">{tn("advisor")}</h1>
