@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r bg-surface md:flex md:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r bg-surface md:flex md:flex-col print:hidden">
         <div className="flex h-16 items-center gap-3 border-b px-5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-xs font-bold text-accent-fg shadow-sm">F</div>
           <div>
@@ -123,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b bg-surface/80 px-4 backdrop-blur md:px-8">
+        <header className="flex h-16 items-center justify-between border-b bg-surface/80 px-4 backdrop-blur md:px-8 print:hidden">
           <div className="flex items-center gap-2 md:hidden">
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Buka menu">
               <Menu className="h-5 w-5" />
@@ -174,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </aside>
           </div>
         )}
-        <main className="flex-1 p-4 md:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-8 print:p-0">{children}</main>
       </div>
     </div>
   );
