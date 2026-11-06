@@ -344,19 +344,19 @@ export default async function ReportsPage({
   const expenseCategories = aggregateBy("expense");
   const incomeCategories = aggregateBy("income");
 
-  const walletGroups = new Map<string, { income: number; expense: number; count: number }>();
+  const accountGroups = new Map<string, { income: number; expense: number; count: number }>();
   for (const row of selected) {
     if (row.type === "transfer") continue;
-    const group = walletGroups.get(row.account_id) ?? { income: 0, expense: 0, count: 0 };
+    const group = accountGroups.get(row.account_id) ?? { income: 0, expense: 0, count: 0 };
     if (row.type === "income") group.income += Number(row.amount_base);
     if (row.type === "expense") group.expense += Math.abs(Number(row.amount_base));
     group.count += 1;
-    walletGroups.set(row.account_id, group);
+    accountGroups.set(row.account_id, group);
   }
-  const wallets = Array.from(walletGroups.entries())
+  const accounts = Array.from(accountGroups.entries())
     .map(([id, group]) => ({
       id,
-      name: accountMap.get(id) ?? t("unknownWallet"),
+      name: accountMap.get(id) ?? t("unknownAccount"),
       ...group,
       net: group.income - group.expense,
     }))
@@ -373,7 +373,7 @@ export default async function ReportsPage({
     category: row.category_id
       ? categoryMap.get(row.category_id) ?? t("uncategorized")
       : t("uncategorized"),
-    account: accountMap.get(row.account_id) ?? t("unknownWallet"),
+    account: accountMap.get(row.account_id) ?? t("unknownAccount"),
   }));
 
   const reportBudgets = (budgetsResult.data ?? [])
@@ -450,7 +450,7 @@ export default async function ReportsPage({
     trend,
     expenseCategories,
     incomeCategories,
-    wallets,
+    accounts,
     budgets: reportBudgets.map((budget) => ({
       name: budget.name,
       category: budget.category,
@@ -492,7 +492,7 @@ export default async function ReportsPage({
     netCashflow: t("netCashflow"),
     expensesByCategory: t("expensesByCategory"),
     incomeBySource: t("incomeBySource"),
-    walletSummary: t("walletSummary"),
+    accountSummary: t("accountSummary"),
     budgetVsActual: t("budgetVsActual"),
     budgetName: t("budgetName"),
     budgetPeriod: t("period"),
@@ -649,9 +649,9 @@ export default async function ReportsPage({
       </div>
 
       <Card>
-        <h2 className="mb-4 text-sm font-semibold">{t("walletSummary")}</h2>
-        {wallets.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted">{t("noWalletData")}</p>
+        <h2 className="mb-4 text-sm font-semibold">{t("accountSummary")}</h2>
+        {accounts.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">{t("noAccountData")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px]">
@@ -664,17 +664,17 @@ export default async function ReportsPage({
                 </tr>
               </thead>
               <tbody>
-                {wallets.map((wallet) => (
-                  <tr key={wallet.id} className="border-b last:border-0">
-                    <td className="px-3 py-2.5 text-sm">{wallet.name}</td>
+                {accounts.map((account) => (
+                  <tr key={account.id} className="border-b last:border-0">
+                    <td className="px-3 py-2.5 text-sm">{account.name}</td>
                     <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm text-income">
-                      {formatMoney(wallet.income, currency, locale)}
+                      {formatMoney(account.income, currency, locale)}
                     </td>
                     <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm text-expense">
-                      {formatMoney(wallet.expense, currency, locale)}
+                      {formatMoney(account.expense, currency, locale)}
                     </td>
                     <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm">
-                      {formatMoney(wallet.net, currency, locale, { signed: true })}
+                      {formatMoney(account.net, currency, locale, { signed: true })}
                     </td>
                   </tr>
                 ))}
