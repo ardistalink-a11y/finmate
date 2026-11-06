@@ -93,7 +93,7 @@
     color: #111 !important;
   }
 
-  .report-page .text-muted {
+  .report-page .report-print-allow-break {\n    break-inside: auto !important;\n  }\n\n  .report-page .text-muted {
     color: #555 !important;
   }
 
