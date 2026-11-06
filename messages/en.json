@@ -72,7 +72,9 @@
     "noTransactions": "No transactions yet. Start by logging your first one!",
     "noAccounts": "No wallets yet",
     "addFirstAccount": "Add Your First Wallet",
-    "quickAdd": "Quick Add"
+    "quickAdd": "Quick Add",
+    "monthlyCashflow": "Monthly Income & Expenses",
+    "monthlyCashflowDescription": "Cash flow comparison over the last 12 months."
   },
   "accounts": {
     "title": "Wallets",
@@ -102,7 +104,11 @@
     "type": "Type",
     "amount": "Amount",
     "note": "Note",
-    "types": { "income": "Income", "expense": "Expense", "transfer": "Transfer" },
+    "types": {
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer"
+    },
     "filterAll": "All",
     "noTransactions": "No transactions yet",
     "deleteConfirm": "Delete this transaction?"
