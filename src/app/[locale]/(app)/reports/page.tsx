@@ -261,7 +261,7 @@ export default async function ReportsPage({
   const today = new Date().toISOString().slice(0, 10);
   const dateRange = getDateRange(selectedRange, one(search.from), one(search.to), today);
 
-  const [selectedRows, previousRows, profileResult, accountsResult, categoriesResult, budgetsResult] =
+  const [selectedRows, previousRows, profileResult, accountsResult, categoriesResult, budgetsResult, liabilitiesResult] =
     await Promise.all([
       fetchTransactions(
         supabase,
@@ -283,6 +283,10 @@ export default async function ReportsPage({
         .select("id,name,category_id,amount,currency,period,start_date,end_date,is_active")
         .eq("user_id", user.id)
         .eq("is_active", true),
+      supabase
+        .from("debts")
+        .select("id,name,principal,outstanding,currency")
+        .eq("user_id", user.id),
     ]);
 
   const currency = profileResult.data?.base_currency ?? "IDR";
@@ -318,6 +322,22 @@ export default async function ReportsPage({
   const accountOptions = accountsResult.data ?? [];
   const categoryMap = new Map(categories.map((category) => [category.id, category.name]));
   const accountMap = new Map(accountOptions.map((account) => [account.id, account.name]));
+  const liabilities = (liabilitiesResult.data ?? [])
+    .filter((liability) => Number(liability.outstanding) > 0)
+    .map((liability) => ({
+      name: liability.name,
+      currency: liability.currency,
+      principal: Number(liability.principal),
+      outstanding: Number(liability.outstanding),
+    }))
+    .sort((a, b) => b.outstanding - a.outstanding);
+  const liabilitiesByCurrency = new Map<string, number>();
+  for (const liability of liabilities) {
+    liabilitiesByCurrency.set(
+      liability.currency,
+      (liabilitiesByCurrency.get(liability.currency) ?? 0) + liability.outstanding
+    );
+  }
 
   const aggregateBy = (kind: "income" | "expense") => {
     const groups = new Map<string, { name: string; total: number; count: number }>();
@@ -366,7 +386,7 @@ export default async function ReportsPage({
     id: row.id,
     date: row.date,
     type: row.type,
-    amount: Math.abs(Number(row.amount)),
+    amount: Number(row.amount),
     amountBase: Number(row.amount_base),
     currency: row.currency,
     description: row.note || row.merchant || "—",
@@ -451,6 +471,7 @@ export default async function ReportsPage({
     expenseCategories,
     incomeCategories,
     wallets: accounts,
+    liabilities,
     budgets: reportBudgets.map((budget) => ({
       name: budget.name,
       category: budget.category,
@@ -493,6 +514,10 @@ export default async function ReportsPage({
     expensesByCategory: t("expensesByCategory"),
     incomeBySource: t("incomeBySource"),
     walletSummary: t("accountSummary"),
+    liabilitiesSummary: t("liabilitiesSummary"),
+    liabilityName: t("liabilityName"),
+    principal: t("principal"),
+    outstanding: t("outstanding"),
     budgetVsActual: t("budgetVsActual"),
     budgetName: t("budgetName"),
     budgetPeriod: t("period"),
@@ -680,6 +705,53 @@ export default async function ReportsPage({
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold">{t("liabilitiesSummary")}</h2>
+          <p className="mt-1 text-xs text-muted">{t("liabilitiesDescription")}</p>
+        </div>
+        {liabilities.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted">{t("noOutstandingLiabilities")}</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3">
+              {Array.from(liabilitiesByCurrency.entries()).map(([liabilityCurrency, total]) => (
+                <div key={liabilityCurrency} className="rounded-lg bg-surface-2 px-3 py-2">
+                  <p className="text-xs text-muted">{liabilityCurrency}</p>
+                  <p className="num mt-1 text-sm font-semibold">{formatMoney(total, liabilityCurrency, locale)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px]">
+                <thead className="border-b bg-surface/50 text-left text-xs font-medium text-muted">
+                  <tr>
+                    <th className="px-3 py-2.5">{t("liabilityName")}</th>
+                    <th className="px-3 py-2.5 text-right">{t("principal")}</th>
+                    <th className="px-3 py-2.5 text-right">{t("outstanding")}</th>
+                    <th className="px-3 py-2.5">{t("currency")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {liabilities.map((liability) => (
+                    <tr key={liability.name} className="border-b last:border-0">
+                      <td className="px-3 py-2.5 text-sm">{liability.name}</td>
+                      <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm text-muted">
+                        {formatMoney(liability.principal, liability.currency, locale)}
+                      </td>
+                      <td className="num whitespace-nowrap px-3 py-2.5 text-right text-sm font-medium">
+                        {formatMoney(liability.outstanding, liability.currency, locale)}
+                      </td>
+                      <td className="px-3 py-2.5 text-sm text-muted">{liability.currency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Card>
