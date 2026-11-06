@@ -38,7 +38,7 @@ export default async function GoalsPage({ params }: { params: Promise<{ locale: 
         <form action={createGoal} className="mt-4 space-y-4">
           <div><Label htmlFor="goal-new-name">{t("name")}</Label><Input id="goal-new-name" name="name" required maxLength={100} /></div>
           <div><Label htmlFor="goal-new-target">{t("target")}</Label><Input id="goal-new-target" name="target_amount" type="number" min="0.01" step="0.01" required /></div>
-          <div><Label htmlFor="goal-new-currency">{t("accounts.currency")}</Label><select id="goal-new-currency" name="currency" className="input"><option>IDR</option><option>USD</option><option>SGD</option><option>EUR</option><option>MYR</option></select></div>
+          <div><Label htmlFor="goal-new-currency">{t("currency")}</Label><select id="goal-new-currency" name="currency" className="input"><option>IDR</option><option>USD</option><option>SGD</option><option>EUR</option><option>MYR</option></select></div>
           <div><Label htmlFor="goal-new-date">{t("targetDate")}</Label><Input id="goal-new-date" name="target_date" type="date" /></div>
           <Button type="submit" className="w-full">{t("add")}</Button>
         </form>
