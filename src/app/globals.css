@@ -69,3 +69,35 @@
     @apply text-xs font-semibold tracking-wide text-muted;
   }
 }
+
+
+@media print {
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .report-print-hide {
+    display: none !important;
+  }
+
+  .report-page {
+    max-width: none !important;
+  }
+
+  .report-page .card {
+    break-inside: avoid;
+    border-color: #ddd !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+
+  .report-page .text-muted {
+    color: #555 !important;
+  }
+
+  .report-page tr {
+    break-inside: avoid;
+  }
+}
