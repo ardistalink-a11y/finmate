@@ -44,20 +44,20 @@
     "signOut": "Sign out"
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Overview",
     "transactions": "Transactions",
-    "accounts": "Wallets",
+    "accounts": "Financial Accounts",
     "budgets": "Budgets",
-    "recurring": "Recurring",
-    "goals": "Goals",
-    "debts": "Debts",
-    "reports": "Reports",
-    "import": "Import",
-    "advisor": "AI Advisor",
+    "recurring": "Recurring Transactions",
+    "goals": "Financial Goals",
+    "debts": "Liabilities",
+    "reports": "Financial Reports",
+    "import": "Import Transactions",
+    "advisor": "AI Finance Assistant",
     "settings": "Settings",
-    "groupMain": "Main",
+    "groupMain": "Finance",
     "groupPlanning": "Planning",
-    "groupTools": "Tools"
+    "groupTools": "Analysis & Tools"
   },
   "dashboard": {
     "greeting": "Hi, {name}",
@@ -75,36 +75,40 @@
     "quickAdd": "Quick Add",
     "monthlyCashflow": "Monthly Income & Expenses",
     "monthlyCashflowDescription": "Cash flow comparison over the last 12 months.",
-    "slideToViewMonths": "Slide to view other months"
+    "slideToViewMonths": "Slide to view other months",
+    "netWorthByCurrency": "Net balance by currency",
+    "addAccountPrompt": "Add your first financial account to start recording transactions.",
+    "uncategorized": "Uncategorized"
   },
   "accounts": {
-    "title": "Wallets",
-    "subtitle": "All bank accounts, e-wallets, and cash in one place",
-    "addAccount": "Add Wallet",
-    "name": "Wallet Name",
-    "type": "Type",
+    "title": "Financial Accounts",
+    "subtitle": "Bank accounts, digital wallets, cash, and other accounts",
+    "addAccount": "Add Account",
+    "name": "Account name",
+    "type": "Account type",
     "currency": "Currency",
-    "openingBalance": "Opening Balance",
+    "openingBalance": "Opening balance",
     "types": {
-      "bank": "Bank",
-      "ewallet": "E-Wallet",
+      "bank": "Bank account",
+      "ewallet": "Digital wallet",
       "cash": "Cash",
-      "credit_card": "Credit Card",
+      "credit_card": "Credit card",
       "investment": "Investment",
       "loan": "Loan"
     },
-    "total": "Total ({currency})"
+    "total": "Total balance ({currency})",
+    "archive": "Archive"
   },
   "transactions": {
     "title": "Transactions",
-    "subtitle": "All income and expenses",
-    "addTransaction": "Add Transaction",
+    "subtitle": "Record and review all income, expenses, and transfers.",
+    "addTransaction": "Add transaction",
     "date": "Date",
-    "account": "Wallet",
+    "account": "Financial account",
     "category": "Category",
-    "type": "Type",
+    "type": "Transaction type",
     "amount": "Amount",
-    "note": "Note",
+    "note": "Description",
     "types": {
       "income": "Income",
       "expense": "Expense",
@@ -112,13 +116,17 @@
     },
     "filterAll": "All",
     "noTransactions": "No transactions yet",
-    "deleteConfirm": "Delete this transaction?"
+    "deleteConfirm": "Delete this transaction?",
+    "merchant": "Payee / source",
+    "chooseAccount": "Choose an account",
+    "uncategorized": "Uncategorized",
+    "noAccountPrompt": "Add a financial account before recording a transaction."
   },
   "settings": {
     "title": "Settings",
     "profile": "Profile",
     "preferences": "Preferences",
-    "baseCurrency": "Base Currency",
+    "baseCurrency": "Base currency",
     "language": "Language",
     "theme": "Theme",
     "themeLight": "Light",
@@ -127,11 +135,14 @@
     "dangerZone": "Danger Zone",
     "deleteAccount": "Delete Account",
     "deleteAccountWarning": "All data will be permanently deleted. This action cannot be undone.",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "email": "Email",
+    "name": "Name",
+    "description": "Manage your account preferences and profile information."
   },
   "comingSoon": {
     "title": "Coming Soon",
-    "description": "This feature is under development. Logic is ready, UI coming next."
+    "description": "This feature is under development."
   },
   "reports": {
     "title": "Financial Reports",
@@ -202,5 +213,72 @@
     "actualAmount": "Actual spending",
     "utilization": "Utilization",
     "incomparable": "Not comparable"
+  },
+  "budgets": {
+    "title": "Budgets",
+    "subtitle": "Set spending limits and monitor actual spending.",
+    "add": "Create budget",
+    "name": "Budget name",
+    "amount": "Budget limit",
+    "period": "Period",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save": "Save changes",
+    "delete": "Delete",
+    "empty": "No budgets yet.",
+    "currency": "Currency"
+  },
+  "goals": {
+    "title": "Financial Goals",
+    "subtitle": "Plan savings targets and track your progress.",
+    "add": "Create goal",
+    "name": "Goal name",
+    "target": "Target amount",
+    "current": "Amount saved",
+    "targetDate": "Target date",
+    "save": "Save changes",
+    "delete": "Delete",
+    "empty": "No financial goals yet.",
+    "progress": "Progress"
+  },
+  "debts": {
+    "title": "Liabilities",
+    "subtitle": "Track outstanding balances, interest rates, and due dates.",
+    "add": "Record liability",
+    "name": "Liability name",
+    "principal": "Principal",
+    "outstanding": "Outstanding balance",
+    "interestRate": "Annual interest rate (%)",
+    "dueDate": "Due date",
+    "save": "Save changes",
+    "delete": "Delete",
+    "empty": "No liabilities recorded.",
+    "currency": "Currency"
+  },
+  "recurring": {
+    "title": "Recurring Transactions",
+    "subtitle": "Manage scheduled transactions such as bills and regular income.",
+    "add": "Create recurring transaction",
+    "account": "Financial account",
+    "amount": "Amount",
+    "note": "Description",
+    "nextRun": "Next date",
+    "frequency": "Frequency",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "income": "Income",
+    "expense": "Expense",
+    "type": "Transaction type",
+    "save": "Save changes",
+    "delete": "Delete",
+    "empty": "No recurring transactions yet.",
+    "active": "Active"
+  },
+  "import": {
+    "title": "Import Transactions",
+    "subtitle": "Upload a CSV or Excel file, review the mapping, then import into a financial account.",
+    "template": "Download Excel template"
   }
 }
