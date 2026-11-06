@@ -194,6 +194,7 @@
     "page": "Baris",
     "of": "dari",
     "noTransactions": "Tidak ada transaksi pada periode ini.",
-    "noSearchResults": "Tidak ada transaksi yang cocok dengan pencarian."
+    "noSearchResults": "Tidak ada transaksi yang cocok dengan pencarian.",
+    "currency": "Mata uang"
   }
 }
