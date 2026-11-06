@@ -43,7 +43,9 @@ function addDays(value: string, amount: number) {
 }
 
 function isDateString(value: string | undefined): value is string {
-  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(utcDate(value).getTime()));
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = utcDate(value);
+  return !Number.isNaN(parsed.getTime()) && dateString(parsed) === value;
 }
 
 function getDateRange(
@@ -193,6 +195,7 @@ function Breakdown({
   emptyLabel,
   currency,
   locale,
+  countLabel,
 }: {
   title: string;
   rows: { name: string; total: number; count: number }[];
@@ -200,6 +203,7 @@ function Breakdown({
   emptyLabel: string;
   currency: string;
   locale: string;
+  countLabel: string;
 }) {
   return (
     <Card>
@@ -215,7 +219,7 @@ function Breakdown({
                 <div className="mb-1 flex items-center justify-between gap-3 text-sm">
                   <span className="truncate">{row.name}</span>
                   <span className="num shrink-0 text-right text-xs text-muted">
-                    {formatMoney(row.total, currency, locale)} · {percent.toFixed(1)}%
+                    {formatMoney(row.total, currency, locale)} · {percent.toFixed(1)}% · {row.count} {countLabel}
                   </span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
@@ -377,8 +381,14 @@ export default async function ReportsPage({
     .map((budget) => {
       const overlapStart = budget.start_date > start ? budget.start_date : start;
       const overlapEnd = budget.end_date && budget.end_date < end ? budget.end_date : end;
-      const limit = budgetLimitForRange(Number(budget.amount), budget.period, overlapStart, overlapEnd);
+      const limit = budgetLimitForRange(
+        Number(budget.amount),
+        budget.period as "weekly" | "monthly" | "yearly",
+        overlapStart,
+        overlapEnd
+      );
       const spent = selected
+        .filter((row) => row.date >= overlapStart && row.date <= overlapEnd)
         .filter((row) => row.type === "expense")
         .filter((row) => budget.category_id
           ? row.category_id === budget.category_id
@@ -430,6 +440,7 @@ export default async function ReportsPage({
     category: t("category"),
     account: t("account"),
     amount: t("amount"),
+    currency: t("currency"),
     amountBase: t("amountInBase"),
     income: t("income"),
     expense: t("expense"),
@@ -545,6 +556,7 @@ export default async function ReportsPage({
           emptyLabel={t("noCategoryData")}
           currency={currency}
           locale={locale}
+          countLabel={t("transactionCount")}
         />
         <Breakdown
           title={t("incomeBySource")}
@@ -553,6 +565,7 @@ export default async function ReportsPage({
           emptyLabel={t("noCategoryData")}
           currency={currency}
           locale={locale}
+          countLabel={t("transactionCount")}
         />
       </div>
 
@@ -657,7 +670,7 @@ export default async function ReportsPage({
           dateTo={end}
         />
       </div>
-      <p className="report-print-hide text-xs text-muted">{t("comparisonPeriod")}: {previousDateLabel}</p>
+      <p className="text-xs text-muted">{t("comparisonPeriod")}: {previousDateLabel}</p>
     </div>
   );
 }
