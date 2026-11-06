@@ -74,7 +74,8 @@
     "addFirstAccount": "Add Your First Wallet",
     "quickAdd": "Quick Add",
     "monthlyCashflow": "Monthly Income & Expenses",
-    "monthlyCashflowDescription": "Cash flow comparison over the last 12 months."
+    "monthlyCashflowDescription": "Cash flow comparison over the last 12 months.",
+    "slideToViewMonths": "Slide to view other months"
   },
   "accounts": {
     "title": "Wallets",
